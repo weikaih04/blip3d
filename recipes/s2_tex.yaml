@@ -1,0 +1,11 @@
+# S2: full fine-tune of the tex tower (elastic activation checkpointing on).
+name: blip3d-v12-s2-tex
+stage: s2
+tower: tex
+data: v12_tex
+init: {from: keep/v12/s1_connector/tex_20000_ema, use_ema: false}
+trainable: all
+lr: 2.0e-5
+max_steps: 106000
+decay_steps: 6000
+compute: {nodes: 2, per_gpu_bs: 8, save_steps: 5000, keep: 6, workers: 10}

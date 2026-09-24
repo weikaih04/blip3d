@@ -1,0 +1,10 @@
+# S1: connector-only warm-up of the shape tower (flow frozen). Stable ends at 20k; S2 starts from the 20k EMA.
+name: blip3d-v12-s1-shape
+stage: s1
+tower: shape
+data: v12_shape
+trainable: connector
+lr: 1.0e-4
+max_steps: 26000
+decay_steps: 6000
+compute: {nodes: 2, per_gpu_bs: 8, save_steps: 2500, keep: 12, workers: 10}

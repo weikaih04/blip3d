@@ -1,0 +1,11 @@
+# S2: full fine-tune of the SS tower with ROAD. bs 8 OOMs (~135 GB with ROAD + live conditioning), so 4 nodes x bs 4.
+name: blip3d-v12-s2-ss
+stage: s2
+tower: ss
+data: v12_ss
+init: {from: keep/v12/s1_connector/ss_20000_ema, use_ema: false}
+trainable: all
+lr: 2.0e-5
+max_steps: 106000
+decay_steps: 6000
+compute: {nodes: 4, per_gpu_bs: 4, save_steps: 5000, keep: 6, workers: 10}

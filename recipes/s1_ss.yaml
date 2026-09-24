@@ -1,0 +1,10 @@
+# S1: connector-only warm-up of the ss tower (flow frozen; the ROAD projector trains too). Stable ends at 20k; S2 starts from the 20k EMA.
+name: blip3d-v12-s1-ss
+stage: s1
+tower: ss
+data: v12_ss
+trainable: connector
+lr: 1.0e-4
+max_steps: 26000
+decay_steps: 6000
+compute: {nodes: 2, per_gpu_bs: 8, save_steps: 2500, keep: 12, workers: 10}
