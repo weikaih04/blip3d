@@ -52,6 +52,11 @@ def main():
     a = ap.parse_args()
 
     r = load_recipe(a.recipe, a.set)
+    if os.environ.get("BLIP3D_MEM_GB"):        # smoke tests beside another job on the same GPU
+        lr_ = int(os.environ.get("LOCAL_RANK", "0"))
+        torch.cuda.set_device(lr_)
+        tot = torch.cuda.get_device_properties(lr_).total_memory / 2 ** 30
+        torch.cuda.set_per_process_memory_fraction(min(1.0, float(os.environ["BLIP3D_MEM_GB"]) / tot), lr_)
     paths = get_paths()
     out = r.out_dir()
     os.makedirs(out, exist_ok=True)

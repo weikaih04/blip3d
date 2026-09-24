@@ -551,7 +551,7 @@ class Blip3DUnified(nn.Module):
         return out
 
     @torch.no_grad()
-    def precompute_geo_kv(self, x_s, t_s, cond_s, want_v: bool = False):
+    def precompute_geo_kv(self, x_s, t_s, cond_s, want_v: bool = False, t_x=None):
         """One full geo pass; returns (kv, v_s|None) with kv[i] = the block-i
         (k_s, v_s) post rms+RoPE — exactly what _run_block_pair borrows.
         tex|mesh mode calls this ONCE (t_s≡0 + clean shape state are constant
@@ -563,7 +563,12 @@ class Blip3DUnified(nn.Module):
         if isinstance(cond_s, list):
             cond_s = sp.VarLenTensor.from_tensor_list(cond_s)
         h_s = manual_cast(geo.input_layer(x_s), geo.dtype)
-        mod_s = manual_cast(geo.adaLN_modulation(geo.t_embedder(t_s)), geo.dtype)
+        t_emb_s = geo.t_embedder(t_s)
+        if t_x is not None and getattr(self, "t_mixer_s", None) is not None:
+            # ISSUES U-03: training adds cross_alpha_s * t_mixer_s(t_x) to the geo time embedding; v12's cache omitted
+            # it (t_x=None keeps that). With it the K/V depend on t_x, so the caller recomputes them per tex step.
+            t_emb_s = t_emb_s + self.cross_alpha_s * self.t_mixer_s(t_x)
+        mod_s = manual_cast(geo.adaLN_modulation(t_emb_s), geo.dtype)
         cond_s = manual_cast(cond_s, geo.dtype)
         kv = []
         for gblk in geo.blocks:

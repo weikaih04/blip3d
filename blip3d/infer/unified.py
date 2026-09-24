@@ -29,10 +29,11 @@ class UnifiedOptions:
     ss_uncond_in_uncond: bool = False  # U-04: v12 fed the SS lane the positive cond in the uncond forward
     tex_reads_ss: bool = False         # U-02: v12 refine / tex-on-mesh ran without the SS K/V training always had
     lag_on_train_grid: bool = False    # U-06: v12 interleave paired nodes on the preset's SS steps (24 on the text path)
+    geo_kv_tmix: bool = False          # U-03: v12's cached geo pass dropped the t_mixer_s(t_x) term (K/V recomputed per step)
 
     @classmethod
     def fixed(cls) -> "UnifiedOptions":
-        return cls(True, True, True, True)
+        return cls(True, True, True, True, True)
 
 
 class UnifiedSampler:
@@ -123,6 +124,7 @@ class UnifiedSampler:
         t0 = torch.tensor([0.0], device="cuda")
         kv, _ = self.m.precompute_geo_kv(cc, t0, cs["geo"][0])
         g = torch.Generator(device="cuda").manual_seed(seed)
+        exact = self.o.geo_kv_tmix
         x = torch.randn(N, 32, generator=g, device="cuda", dtype=torch.float32)
         p = self.p.tex
         ts = t_seq(p.steps, p.rescale_t)
@@ -130,6 +132,8 @@ class UnifiedSampler:
             t, tp = float(ts[i]), float(ts[i + 1])
             tt = torch.tensor([t * 1000.0], device="cuda")
             xin = sp.SparseTensor(x, coords.cuda())
+            if exact:
+                kv, _ = self.m.precompute_geo_kv(cc, t0, cs["geo"][0], t_x=tt)
             vp = self.m.tex_forward_cached(xin, tt, t0, cs["tex"][0], cc, kv, ss_kv_cache=ss_kv).feats.float()
             vn = (vp if p.cfg == 1 else  # released tex cfg 1.0: the negative branch is never needed
                   self.m.tex_forward_cached(xin, tt, t0, cs["tex"][1], cc, kv, ss_kv_cache=ss_kv).feats.float())

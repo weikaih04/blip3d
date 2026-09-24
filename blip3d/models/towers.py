@@ -18,7 +18,7 @@ import torch.nn as nn
 
 from ..cond.connector import Connector
 from ..cond.stamp import ViewCodes
-from ..train.ckpt import connector_state, load_state
+from ..train.ckpt import tower_state
 
 FLOWS = {
     "ss": ("ss_flow_img_dit_1_3B_64_bf16", "ss_flow."),
@@ -71,16 +71,16 @@ def load_tower(kind: str, ckpt_dir: str, *, trellis2_ckpt: str, use_ema: bool = 
                device: str = "cuda", connector_dtype: torch.dtype = torch.float32) -> Tower:
     """A trained v12 tower: flow + its connector + the model-level view codes. Strict: every flow and connector key must
     be present and consumed (the old loaders only printed the missing count)."""
-    sd = load_state(ckpt_dir, use_ema=use_ema)
+    sd = tower_state(ckpt_dir, kind, use_ema=use_ema)          # v12 or BLIP3D names -> BLIP3D names
     flow = released_flow(kind, trellis2_ckpt)
-    missing, unexpected = flow.load_state_dict(flow_state(sd, kind), strict=False)
+    missing, unexpected = flow.load_state_dict({k[5:]: v for k, v in sd.items() if k.startswith("flow.")}, strict=False)
     if missing or unexpected:
         raise KeyError(f"{ckpt_dir} [{kind}]: missing {missing[:5]} ({len(missing)}), unexpected {unexpected[:5]} ({len(unexpected)})")
     if layout == "bf16":
         flow = to_bf16_keep_complex(flow)
     conn = Connector()
-    conn.load_state_dict(connector_state(sd, "diffusion_connector"), strict=True)
-    views = ViewCodes(table=sd["dino_view_embed"]) if "dino_view_embed" in sd else None
+    conn.load_state_dict({k[10:]: v for k, v in sd.items() if k.startswith("connector.")}, strict=True)
+    views = ViewCodes(table=sd["views.table"]) if "views.table" in sd else None
     flow = flow.to(device).eval().requires_grad_(False)
     conn = conn.to(device).to(connector_dtype).eval().requires_grad_(False)
     return Tower(kind, flow, conn, views.to(device) if views is not None else None)

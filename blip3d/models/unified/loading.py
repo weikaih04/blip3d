@@ -37,14 +37,17 @@ def load_unified(ckpt_dir: str, *, trellis2_ckpt: str, use_ema: bool = True, dev
                  connector_dtype: torch.dtype = torch.float32) -> UnifiedBundle:
     sd = load_state(ckpt_dir, use_ema=use_ema)
     model = skeleton(trellis2_ckpt)
-    uni = {k[len(PREFIX):]: v for k, v in sd.items() if k.startswith(PREFIX)}
+    v12 = any(k.startswith(PREFIX) for k in sd)          # v12 names, or BLIP3D (model.*, connectors.<lane>.*, views.table)
+    pre = PREFIX if v12 else "model."
+    uni = {k[len(pre):]: v for k, v in sd.items() if k.startswith(pre)}
     if not uni:
-        raise KeyError(f"{ckpt_dir}: no '{PREFIX}*' keys (not a unified checkpoint)")
+        raise KeyError(f"{ckpt_dir}: no '{PREFIX}*' or 'model.*' keys (not a unified checkpoint)")
     model.load_state_dict(uni, strict=True)
     conns = {}
-    for lane, pre in CONNECTORS.items():
+    for lane, old in CONNECTORS.items():
         c = Connector()
-        c.load_state_dict(connector_state(sd, pre), strict=True)
+        c.load_state_dict(connector_state(sd, old if v12 else f"connectors.{lane}"), strict=True)
         conns[lane] = c.to(device).to(connector_dtype).eval().requires_grad_(False)
-    views = ViewCodes(table=sd["dino_view_embed"]).to(device) if "dino_view_embed" in sd else None
+    vk = "dino_view_embed" if v12 else "views.table"
+    views = ViewCodes(table=sd[vk]).to(device) if vk in sd else None
     return UnifiedBundle(model.to(device).eval().requires_grad_(False), conns, views)
