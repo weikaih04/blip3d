@@ -24,6 +24,7 @@ class Paths:
     runs: str
     hf_cache: str
     trellis2_ckpt: str
+    ss_decoder: str
     encoders: dict = field(default_factory=dict)
     uni3d_ckpt: Optional[str] = None
 
