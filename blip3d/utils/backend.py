@@ -42,6 +42,11 @@ def setup(purpose: Literal["train", "eval"], attn: Optional[str] = None) -> None
         env["ATTN_BACKEND"] = attn
     for k, v in env.items():
         os.environ[k] = v
+    # JIT-built ops (DeepSpeed fused_adam, the ROAD matcher) need the env's ninja / nvcc even when python is
+    # called by absolute path without activating the env
+    env_bin = os.path.join(sys.prefix, "bin")
+    if env_bin not in os.environ.get("PATH", "").split(os.pathsep):
+        os.environ["PATH"] = env_bin + os.pathsep + os.environ.get("PATH", "")
     if str(TRELLIS2_ROOT) not in sys.path:
         sys.path.insert(0, str(TRELLIS2_ROOT))
     # nvdiffrast JIT-compiles a CUDA extension on first import; point it at the conda env's headers.

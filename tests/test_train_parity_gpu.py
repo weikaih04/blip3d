@@ -127,18 +127,25 @@ def tower_parity(kind, batches, recs, paths, dev):
         tb = {k: (v.to(dev) if (torch.is_tensor(v) or hasattr(v, "feats")) else v) for k, v in b.items()}
         tb["cond"] = cb
         tgt = {"ss": dict(target_ss_latent=tb["ss"]),
-               "shape": dict(target_shape_slat_512=tb["shape"]),
-               "tex": dict(target_tex_slat_512=tb["tex"], tex_concat_cond=tb["tex_concat"])}[kind]
-        torch.manual_seed(1234); torch.cuda.manual_seed(1234)
-        lo, _ = compute_cascade_flow_loss(
-            connector=old_conn, ss_flow=flow if kind == "ss" else None, shape_slat=flow if kind == "shape" else None,
-            tex_slat=flow if kind == "tex" else None, loss_fn_ss=lf_ss, loss_fn_slat=lf_slat,
-            cond_max_length=10240, mask_drop_prob=0.1, dino_drop_prob=0.3 if "dino" in cb else 0.0,
-            qwen_drop_prob=0.0, dino_view_embed=table, cond_seg_embed=old_conn.cond_seg_embed,
-            cond_patch_pos=old_conn.cond_patch_pos, **old_inputs(cb), **tgt)
-        lo.backward()
-        g_old = {n: p.grad.clone() for n, p in old_conn.named_parameters()}
-        old_conn.zero_grad(set_to_none=True)
+               "shape": dict(target_ss_latent=None, target_shape_slat_512=tb["shape"]),
+               "tex": dict(target_ss_latent=None, target_tex_slat_512=tb["tex"], tex_concat_cond=tb["tex_concat"])}[kind]
+
+        def run_old():
+            torch.manual_seed(1234); torch.cuda.manual_seed(1234)
+            lo, _ = compute_cascade_flow_loss(
+                connector=old_conn, ss_flow=flow if kind == "ss" else None,
+                shape_slat=flow if kind == "shape" else None, tex_slat=flow if kind == "tex" else None,
+                loss_fn_ss=lf_ss, loss_fn_slat=lf_slat, cond_max_length=10240, mask_drop_prob=0.1,
+                dino_drop_prob=0.3 if "dino" in cb else 0.0, qwen_drop_prob=0.0, dino_view_embed=table,
+                cond_seg_embed=old_conn.cond_seg_embed, cond_patch_pos=old_conn.cond_patch_pos, **old_inputs(cb), **tgt)
+            lo.backward()
+            g = {n: p.grad.clone() for n, p in old_conn.named_parameters()}
+            old_conn.zero_grad(set_to_none=True)
+            return lo, g
+
+        lo, g_old = run_old()
+        _, g_old2 = run_old()            # the old code against itself: the backward-kernel noise floor
+        floor = max((g_old[n].float() - g_old2[n].float()).abs().max().item() for n in g_old)
         torch.manual_seed(1234); torch.cuda.manual_seed(1234)
         ln, logs = tower(tb)
         ln.backward()
@@ -146,7 +153,10 @@ def tower_parity(kind, batches, recs, paths, dev):
         new_conn.zero_grad(set_to_none=True)
         check(f"loss {kind} {m}", torch.equal(lo.detach(), ln.detach()), f"old {lo.item():.6f} new {ln.item():.6f}")
         gd = max((g_old[n].float() - g_new[n].float()).abs().max().item() for n in g_new)
-        check(f"grads {kind} {m}", gd == 0.0, f"max |dg| {gd:.3g} over {len(g_new)} tensors")
+        rel = max(((g_old[n].float() - g_new[n].float()).norm() / g_old[n].float().norm().clamp_min(1e-30)).item()
+                  for n in g_new)
+        check(f"grads {kind} {m}", gd <= 2 * floor or gd == 0.0,
+              f"max |dg| new-old {gd:.3g} vs old-old {floor:.3g}; max rel {rel:.2e} over {len(g_new)} tensors")
     del flow, tower, old_conn
     torch.cuda.empty_cache()
 
