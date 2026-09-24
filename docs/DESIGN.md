@@ -184,12 +184,14 @@ then the fixes in §6 are switched on and measured separately.
 7. ROAD, voxel balance, resume/EMA/universal-checkpoint test from a kept checkpoint.
 8. `cluster/` + `tools/`.
 
-## 11. Decisions for you
+## 11. Decisions (resolved 2026-09-24: "fix everything")
 
-1. Defect #2 (per-rank timesteps): fix in BLIP3D by default? And in the running SS-300k?
-2. Training framework for v1: keep HF Trainer + DeepSpeed (easiest parity, recommended) or a custom loop.
-3. The unified model as a first-class citizen (recommended — the "one model" story), with its inference
-   redesigned to be truly joint rather than cascade-on-unified-weights.
-4. TRELLIS.2 as a pinned submodule of the pushed fork (recommended) vs vendored copy.
-5. Manifests: keep them outside the repo behind a small versioned registry (recommended).
-6. `s2_ss` history: record as the two-leg run it was (75k, then 31k restart) or document only the recipe.
+1. Defect #2 (per-rank timesteps): fixed by default (`compat.shared_t` restores v12); the running SS-300k already
+   reseeds the CPU generator per rank.
+2. Training framework: HF Trainer + DeepSpeed ZeRO-1 (parity with v12 checkpoints, optimizer shards importable).
+3. The unified model is first-class (`recipes/s3_unify.yaml`, `Pipeline.unified`); its inference fixes are
+   implemented behind `UnifiedOptions.fixed()` until measured.
+4. TRELLIS.2 is a pinned submodule of the pushed fork (`blip3o-next` @ `2ed033d`).
+5. Manifests stay outside the repo (`paths.manifests`).
+6. `s2_ss` history is documented as the two-leg run it was (docs/STATUS.md, CHECKPOINTS.md); recipes describe the
+   clean single run.
