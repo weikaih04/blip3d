@@ -1,0 +1,4 @@
+[submodule "third_party/TRELLIS.2"]
+	path = third_party/TRELLIS.2
+	url = https://github.com/weikaih04/TRELLIS.2.git
+	branch = blip3o-next

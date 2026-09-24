@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.compile_cache/
+wandb/
+runs/
+outputs/
+*.log
+paths.yaml
+tests/golden/*.pt
+tests/golden/*.safetensors

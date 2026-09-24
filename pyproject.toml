@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "blip3d"
+version = "0.1.0.dev0"
+description = "BLIP3D: one model for image-, multi-image- and text-to-3D generation"
+requires-python = ">=3.10"
+# Pinned environment: env/requirements.lock (the heavy compiled deps are listed in env/README.md).
+dependencies = []
+
+[tool.setuptools.packages.find]
+include = ["blip3d*"]
