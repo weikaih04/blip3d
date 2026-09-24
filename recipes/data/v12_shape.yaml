@@ -1,0 +1,33 @@
+# v12 data for the shape tower. Was configs/mix_v12_shape_texfixed.yaml.
+# pbr is no longer read here (v12 read it for ~75% of rows and the model ignored it; compat_replay restores that).
+version: 1
+defaults:
+  targets: [ss, shape]
+  slat_resolution: 512
+  min_aesthetic: 4.5
+  max_slat_tokens: 8192       # over-cap assets are resampled
+  cond: {dino_size: 512, im_tok_per_view: 256}
+tasks:
+  - name: t_real
+    modality: t
+    weight: 0.6
+    manifest: ${manifests}/capT1800k_train_texfixed_ff.jsonl
+    captions: {weights: [0.4, 0.12, 0.08, 0.4], fallback: long}        # tiers [long, medium, short, long+texture]
+  - name: t_synth
+    modality: t
+    weight: 0.1
+    manifest: ${manifests}/capT_synth_train_texfixed_ff.jsonl
+    captions: {weights: [0.45, 0.15, 0.15, 0.25], fallback: renormalize}
+  - name: i1
+    modality: i1
+    weight: 0.15
+    manifest: ${manifests}/pool1800k_train_texfixed_ff.jsonl
+    views: {sampler: uniform}                                            # all 16 renders, below-ground included
+  - name: im
+    modality: im
+    weight: 0.15
+    manifest: ${manifests}/pool1800k_train_texfixed_ff.jsonl
+    views: {sampler: weighted, n_probs: [0.15, 0.25, 0.6], max_views: 4} # n = 2, 3, 4, locked per batch
+sampling: {granularity: batch, temperature: 1.0}
+balance: {enabled: false}
+loader: {num_workers: 10, resample_tries: 8}

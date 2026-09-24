@@ -1,0 +1,35 @@
+# v12 data for the unified model (S3). Was lc/configs/mix_v12_unify_texfixed.yaml + GEOTEX_BALANCE_TABLE.
+# Rows without pbr get a placeholder tex target (zeros, tex_valid=False) that the unified loss masks out.
+version: 1
+defaults:
+  targets: [ss, shape, tex]
+  tex_missing: placeholder
+  slat_resolution: 512
+  min_aesthetic: 4.5
+  max_slat_tokens: 8192
+  cond: {dino_size: 512, im_tok_per_view: 256}
+tasks:
+  - name: t_real
+    modality: t
+    weight: 0.6
+    manifest: ${manifests}/capT1800k_train_texfixed_ff.jsonl
+    captions: {weights: [0.4, 0.12, 0.08, 0.4], fallback: long}        # tiers [long, medium, short, long+texture]
+  - name: t_synth
+    modality: t
+    weight: 0.1
+    manifest: ${manifests}/capT_synth_train_texfixed_ff.jsonl
+    captions: {weights: [0.45, 0.15, 0.15, 0.25], fallback: renormalize}
+  - name: i1
+    modality: i1
+    weight: 0.15
+    manifest: ${manifests}/pool1800k_train_texfixed_ff.jsonl
+    views: {sampler: uniform}                                            # all 16 renders, below-ground included
+  - name: im
+    modality: im
+    weight: 0.15
+    manifest: ${manifests}/pool1800k_train_texfixed_ff.jsonl
+    views: {sampler: weighted, n_probs: [0.15, 0.25, 0.6], max_views: 4} # n = 2, 3, 4, locked per batch
+sampling: {granularity: batch, temperature: 1.0}
+# voxel balance: rebuild the table whenever the pools change (it is keyed by sha)
+balance: {enabled: true, table: /fsx/home/weikai.huang/_lc/balance/voxels_v11.npz, buf_mult: 24, max_age: 64}
+loader: {num_workers: 8, resample_tries: 8}

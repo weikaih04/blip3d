@@ -1,0 +1,34 @@
+# v12 data for the tex tower (pbr-only pools). Was configs/mix_v12_tex_texfixed.yaml.
+# A row without pbr is resampled so every batch keeps its tex target (v12 dropped tex for the whole batch).
+version: 1
+defaults:
+  targets: [ss, shape, tex]
+  tex_missing: resample
+  slat_resolution: 512
+  min_aesthetic: 4.5
+  max_slat_tokens: 8192
+  cond: {dino_size: 512, im_tok_per_view: 256}
+tasks:
+  - name: t_real
+    modality: t
+    weight: 0.6
+    manifest: ${manifests}/capT800k_pbr_train_texfixed_ff.jsonl
+    captions: {weights: [0.4, 0.12, 0.08, 0.4], fallback: long}        # tiers [long, medium, short, long+texture]
+  - name: t_synth
+    modality: t
+    weight: 0.1
+    manifest: ${manifests}/capT_synth_pbr_train_texfixed_ff.jsonl
+    captions: {weights: [0.45, 0.15, 0.15, 0.25], fallback: renormalize}
+  - name: i1
+    modality: i1
+    weight: 0.15
+    manifest: ${manifests}/pool800k_pbr_train_texfixed_ff.jsonl
+    views: {sampler: uniform}                                            # all 16 renders, below-ground included
+  - name: im
+    modality: im
+    weight: 0.15
+    manifest: ${manifests}/pool800k_pbr_train_texfixed_ff.jsonl
+    views: {sampler: weighted, n_probs: [0.15, 0.25, 0.6], max_views: 4} # n = 2, 3, 4, locked per batch
+sampling: {granularity: batch, temperature: 1.0}
+balance: {enabled: false}
+loader: {num_workers: 10, resample_tries: 8}
