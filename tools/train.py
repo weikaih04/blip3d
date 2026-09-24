@@ -100,7 +100,7 @@ def main():
         lr_scheduler_kwargs={"num_decay_steps": r.decay_steps, "decay_type": "cosine", "min_lr_ratio": 0.0},
         logging_steps=5, save_steps=r.compute.save_steps, save_total_limit=r.compute.keep, report_to=r.report_to,
         deepspeed=str(ds_cfg), dataloader_num_workers=mix.num_workers, ignore_data_skip=True,
-        remove_unused_columns=False, accelerator_config={"dispatch_batches": False}, save_safetensors=True)
+        remove_unused_columns=False, accelerator_config={"dispatch_batches": False})
 
     clip = AdaptiveGradClipCallback(resume_from=resume)
     ema = EMACallback(decay=float(r.ema.get("decay", 0.9999)), warmup=bool(r.ema.get("warmup", True)),
