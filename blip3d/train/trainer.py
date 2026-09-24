@@ -58,7 +58,7 @@ class Blip3DTrainer(Trainer):
         with unwrap(model).memory_context():
             loss, logs = model(inputs)
         for k, v in logs.items():
-            v = v.detach().float()
+            v = v.detach().float() if torch.is_tensor(v) else torch.tensor(float(v))
             self._sum[k] = self._sum[k] + v if k in self._sum else v
         self._n += 1
         t = inputs.get("task")
