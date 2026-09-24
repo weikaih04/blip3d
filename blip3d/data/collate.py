@@ -16,6 +16,7 @@ where only some rows carry tex drops it, and says so once); align points all-or-
 """
 from __future__ import annotations
 
+from functools import lru_cache
 from typing import Any, Dict, List, Sequence
 
 import torch
@@ -23,7 +24,11 @@ import torch
 _PARTIAL_TEX_WARNED = False
 
 
+@lru_cache(maxsize=1)
 def _slat_collate():
+    # Imported in the PARENT (Collator.__init__): these modules pull in flex_gemm / Triton, which initialise CUDA on
+    # import, and a first import inside a forked worker of a CUDA-initialised trainer raises "Cannot re-initialize
+    # CUDA in forked subprocess".
     from trellis2.datasets.structured_latent import SLat
     from trellis2.datasets.structured_latent_svpbr import SLatPbr
     return SLat.collate_fn, SLatPbr.collate_fn
@@ -71,6 +76,9 @@ class Collator:
 
     def __init__(self, strict_shape: bool = True):
         self.strict_shape = strict_shape
+        _slat_collate()                     # import in the parent, before the workers fork (see _slat_collate)
+        from .latents import sparse
+        sparse()
 
     def __call__(self, items: List[Dict[str, Any]]) -> Dict[str, Any]:
         return collate(items, strict_shape=self.strict_shape)
