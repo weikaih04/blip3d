@@ -51,6 +51,13 @@ named = [(f"model.{n}", p) for n, p in model.named_parameters()] + \
         [(f"{lane}.{n}", p) for lane, c in conns.items() for n, p in c.named_parameters()]
 g = torch.Generator().manual_seed(0)
 probe_params = [named[i] for i in sorted(torch.randperm(len(named), generator=g)[:48].tolist())]
+if os.environ.get("UNIFIED_TEST_LIGHT") == "1":
+    # only the probed tensors carry gradients (their values do not depend on which other leaves require grad);
+    # cuts ~8 GB of gradients and the activations of frozen branches, for a GPU shared with a training job
+    for _, p in named:
+        p.requires_grad_(False)
+    for _, p in probe_params:
+        p.requires_grad_(True)
 
 
 def rec(mod, T, K, seed):
