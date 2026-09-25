@@ -1,4 +1,4 @@
-# Copy to paths.yaml (git-ignored) and edit. Package code never contains absolute paths.
+# Copy to configs/paths.yaml (git-ignored) and edit. Package code never contains absolute paths.
 data_root: /path/to/data                      # asset latents + renders referenced by the manifests
 manifests: /path/to/manifests                 # training manifests (jsonl), used as ${manifests} in configs/data
 runs: /path/to/runs                           # training outputs; relative checkpoint paths resolve here

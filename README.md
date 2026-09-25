@@ -12,17 +12,25 @@ blip3d/data     manifests, latents, tasks (text / single image / multi image), m
 blip3d/train    trainer (HF Trainer + DeepSpeed ZeRO-1), EMA, callbacks, configs, model builders
 blip3d/infer    sampler presets, cascade and unified samplers (refine / joint / interleave), export, Pipeline
 blip3d/eval     sparse-structure readout
-configs/        train/ (s1_*, s2_*, s3_unify) · data/ · deepspeed/ · infer/
+configs/        train/ (s1_*, s2_*, s3_unify) · data/ · deepspeed/ · infer/ · paths.example.yaml
 tools/          train.py · infer.py · bench.py · readout.py
 ```
 
-## Setup
+## Installation
 
 ```bash
-git clone --recursive <this repo>          # third_party/TRELLIS.2
-cp paths.example.yaml paths.yaml           # data, manifests, checkpoints, HF cache
-pip install -r env/requirements.lock
-export PYTHONNOUSERSITE=1
+git clone --recursive <this repo> && cd blip3d                # third_party/TRELLIS.2 is a submodule
+conda create -n blip3d python=3.10 && conda activate blip3d
+pip install torch==2.6.0 torchvision==0.21.0 --index-url https://download.pytorch.org/whl/cu124
+pip install -e .                                              # core dependencies (requirements.txt)
+```
+
+Compiled extensions, built against torch 2.6 / CUDA 12.4 as in TRELLIS.2:
+flash-attn 2.7.3 (FlashAttention-3 from its `hopper/` directory for training), flex_gemm, cumesh, spconv-cu124,
+nvdiffrast, and `o_voxel` (`pip install -e third_party/TRELLIS.2/o-voxel`).
+
+```bash
+cp configs/paths.example.yaml configs/paths.yaml             # data, manifests, checkpoints, HF cache
 ```
 
 ## Train

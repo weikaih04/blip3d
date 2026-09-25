@@ -1,6 +1,6 @@
 """Filesystem locations, read from ``paths.yaml``. Package code never hard-codes an absolute path.
 
-Lookup order for the file: ``$BLIP3D_PATHS`` → ``<repo>/paths.yaml``. See ``paths.example.yaml``.
+Lookup order for the file: ``$BLIP3D_PATHS`` → ``<repo>/configs/paths.yaml``. See ``configs/paths.example.yaml``.
 Model identities are written as ``<hf id>@<revision>`` and resolved to the local snapshot in the HF cache,
 so a checkpoint can record exactly which encoder weights it was trained against.
 """
@@ -49,9 +49,9 @@ def resolve_hf_snapshot(ident: str, hf_cache: str) -> str:
 
 @lru_cache(maxsize=1)
 def get_paths() -> Paths:
-    f = os.environ.get("BLIP3D_PATHS") or str(REPO_ROOT / "paths.yaml")
+    f = os.environ.get("BLIP3D_PATHS") or str(REPO_ROOT / "configs" / "paths.yaml")
     if not os.path.isfile(f):
-        raise FileNotFoundError(f"paths file not found: {f} (copy paths.example.yaml to paths.yaml)")
+        raise FileNotFoundError(f"paths file not found: {f} (copy configs/paths.example.yaml to configs/paths.yaml)")
     with open(f) as fh:
         d = yaml.safe_load(fh)
     return Paths(**d)

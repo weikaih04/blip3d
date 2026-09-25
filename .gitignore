@@ -7,7 +7,7 @@ wandb/
 runs/
 outputs/
 *.log
-paths.yaml
+configs/paths.yaml
 tests/golden/*.pt
 tests/golden/*.safetensors
 

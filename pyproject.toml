@@ -7,8 +7,22 @@ name = "blip3d"
 version = "0.1.0.dev0"
 description = "BLIP3D: one model for image-, multi-image- and text-to-3D generation"
 requires-python = ">=3.10"
-# Pinned environment: env/requirements.lock (the heavy compiled deps are listed in env/README.md).
-dependencies = []
+dependencies = [
+    "torch==2.6.0",
+    "torchvision==0.21.0",
+    "transformers==5.2.0",
+    "accelerate==1.7.0",
+    "deepspeed==0.19.0",
+    "safetensors==0.7.0",
+    "timm==1.0.24",
+    "numpy==1.26.4",
+    "pillow==11.3.0",
+    "pyyaml==6.0.3",
+    "orjson==3.11.7",
+    "trimesh==4.11.2",
+    "scipy==1.15.3",
+    "huggingface_hub==1.20.1",
+]
 
 [tool.setuptools.packages.find]
 include = ["blip3d*"]
