@@ -71,9 +71,10 @@ def main():
               open(os.path.join(dst, STATE_FILE), "w"))
     print(f"[import] model {len(sd)} tensors, ema {len(ema)} tensors (n={a.ema_n})", flush=True)
 
-    ts["global_step"] = G
-    ts["imported_from"] = {"src": src, "local_step": local}
+    ts["global_step"] = G                      # HF's TrainerState rejects unknown keys: provenance goes to its own file
     json.dump(ts, open(os.path.join(dst, "trainer_state.json"), "w"), indent=2)
+    json.dump({"src": src, "local_step": local, "global_step": G, "ema_n": int(a.ema_n)},
+              open(os.path.join(dst, "imported_from.json"), "w"), indent=2)
     for f in glob.glob(os.path.join(src, "rng_state_*.pth")):
         shutil.copy2(f, os.path.join(dst, os.path.basename(f)))
     if a.weights_only:
@@ -102,6 +103,34 @@ def main():
     open(os.path.join(dst, "latest"), "w").write(f"global_step{G}")
     print(f"[import] DeepSpeed state: model_states + {len(shards)} optimizer shards renamed; latest=global_step{G}",
           flush=True)
+    if os.path.isfile(os.path.join(src, "latest_universal")):
+        _import_universal(src, dst, a.kind, G, ms)
+
+
+def _import_universal(src, dst, kind, G, ms):
+    """The universal checkpoint (world-size-free, one dir per parameter under zero/): parameter dirs renamed, their
+    files symlinked (read-only use), the model-states file taken from the renamed per-rank one above."""
+    u_src = os.path.join(src, open(os.path.join(src, "latest_universal")).read().strip())
+    u_dst = os.path.join(dst, f"global_step{G}_universal")
+    os.makedirs(os.path.join(u_dst, "zero"), exist_ok=True)
+    torch.save(ms, os.path.join(u_dst, "mp_rank_00_model_states.pt"))
+    n = 0
+    for name in sorted(os.listdir(os.path.join(u_src, "zero"))):
+        p = os.path.join(u_src, "zero", name)
+        if os.path.isfile(p):                                   # optimizer_state.pt
+            shutil.copy2(p, os.path.join(u_dst, "zero", name))
+            continue
+        new = from_v12({name: torch.empty(0)}, kind)
+        if not new:
+            continue
+        d = os.path.join(u_dst, "zero", next(iter(new)))
+        os.makedirs(d, exist_ok=True)
+        for f in os.listdir(p):
+            if not os.path.exists(os.path.join(d, f)):
+                os.symlink(os.path.join(p, f), os.path.join(d, f))
+        n += 1
+    open(os.path.join(dst, "latest_universal"), "w").write(f"global_step{G}_universal")
+    print(f"[import] universal checkpoint: {n} parameter dirs renamed (files symlinked) -> {u_dst}", flush=True)
 
 
 if __name__ == "__main__":
