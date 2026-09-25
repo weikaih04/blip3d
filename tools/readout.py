@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """SS readout of one checkpoint on the held-out val200_capT set (see blip3d/eval/readout.py).
 
-    python tools/readout.py keep/v12/s2_ss/checkpoint-150000 --n 24 [--out result.json]
+    python tools/readout.py <ss ckpt> --n 24 [--out result.json]
 """
 from __future__ import annotations
 

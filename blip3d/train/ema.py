@@ -1,7 +1,7 @@
 """EMA of the trainable weights: decay 0.9999 with the (1+n)/(10+n) warm-up, fp32 shadow sharded over ranks.
 
 v12 semantics kept: one update per optimizer step, from the bf16 module weights, shadow sharded by parameter index
-(i % world), written only at save time as ``ema.safetensors`` (fp32, trainable names). Fixed (ISSUES T-02): the
+(i % world), written only at save time as ``ema.safetensors`` (fp32, trainable names). Fixed: the
 update count ``n`` is saved next to it (``ema_state.json``) and a resume restores shadow + n from the checkpoint it
 resumes, instead of restarting the average from the raw weights at n = 0. A v12 checkpoint carries no count: pass
 ``n`` explicitly (the old run's optimizer step, as the SS continuation did with --ema_init_updates).

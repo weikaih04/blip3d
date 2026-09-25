@@ -1,4 +1,4 @@
-"""Frozen sampler presets (ISSUES I-15). No module-level mutable parameter tables: a run picks a preset, may derive a
+"""Frozen sampler presets. No module-level mutable parameter tables: a run picks a preset, may derive a
 new one with ``dataclasses.replace``, and records it next to its outputs."""
 from __future__ import annotations
 
@@ -51,5 +51,5 @@ def preset_for(modality: Literal["i1", "im", "t"], *, unified: bool = False) -> 
 
 
 # The lag schedule the unified model was trained on (12 nodes, SS rescale_t 5, slat rescale_t 3). Interleave inference
-# pairs SS and slat nodes on THIS grid regardless of the preset's SS steps (ISSUES U-06).
+# pairs SS and slat nodes on THIS grid regardless of the preset's SS steps.
 TRAIN_LAG_GRID = dict(steps=12, ss_rescale_t=5.0, slat_rescale_t=3.0)

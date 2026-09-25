@@ -10,3 +10,6 @@ outputs/
 paths.yaml
 tests/golden/*.pt
 tests/golden/*.safetensors
+
+# internal-only (cluster ops, parity tests against the old codebase, audit docs, v12 import); kept locally, never pushed
+internal/

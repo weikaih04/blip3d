@@ -5,7 +5,7 @@ accelerate wraps every IterableDataset in ``IterableDatasetShard`` when ``num_pr
 For a dataset that already partitions by rank (the mixture) that throws away (world-1)/world of every load and,
 worse, hands each rank a different task draw — ranks then train different parameter sets in the same step
 (DDP hangs; ZeRO averages a real gradient with a structural zero). Datasets marked ``_rank_sharded = True`` pass
-straight through; everything else keeps accelerate's behaviour (scan/04 §5.4).
+straight through; everything else keeps accelerate's behaviour.
 
 The patch replaces ``IterableDatasetShard.__iter__`` of accelerate 1.7.0 and is refused on other versions until
 re-checked. The trainer must also set ``accelerator_config.dispatch_batches = False``.

@@ -5,7 +5,7 @@ page by refcounting in every dataloader worker). Here only the fields training r
 column is one contiguous byte buffer plus offsets, so a forked worker shares the whole store copy-on-write without
 touching it.
 
-Fields (scan/04 §3.1): ``sha256`` · ``captions`` (non-empty ones, fixed tier order [long, medium, short,
+Fields: ``sha256`` · ``captions`` (non-empty ones, fixed tier order [long, medium, short,
 long+texture]) · ``ss_latent_64`` · ``shape_latent_<res>`` · ``pbr_latent_<res>`` · ``renders_dir`` · ``n_views``
 (default 16) · ``aesthetic_score`` (None kept) · optional ``n_vox``.
 

@@ -1,6 +1,6 @@
 """Prompts, templates and the structural-token filter for the Qwen3-VL conditioning encoder.
 
-Everything here is a v12 contract (docs/ISSUES.md C-04, C-06, C-12): the exact strings, how a text template
+Everything here is a v12 contract: the exact strings, how a text template
 is chosen, and which token ids are removed from the conditioning sequence.
 """
 from __future__ import annotations
@@ -15,7 +15,7 @@ IMAGE_INSTRUCTION = "\nReconstruct this object in 3D."
 # Text templates; the one used for a training caption is picked by (asset sha, caption index).
 TEXT_TEMPLATES = ("Generate a 3D asset: {c}", "Create a 3D model of: {c}", "Make this in 3D: {c}")
 
-# Structural tokens removed from the conditioning (C-04). "user"/"assistant" are removed anywhere in the
+# Structural tokens removed from the conditioning. "user"/"assistant" are removed anywhere in the
 # sequence, including inside a caption — that is what v12 trained with.
 _STRUCTURAL = ("<|im_start|>", "<|im_end|>", "<|vision_start|>", "<|vision_end|>", "<think>", "</think>")
 _ROLES = ("user", "assistant")

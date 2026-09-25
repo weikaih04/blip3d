@@ -2,7 +2,6 @@
 
 Upstream: github.com/H-EmbodVis/ROAD @ c84739164df2698ce1da63caecffcd9b ("Reciprocal-Objective Alignment of
 Discriminative Semantics for 3D Shape Generation", arXiv:2607.28581); teacher from BAAI Uni3D (arXiv:2310.06773).
-v12 carried the same copy in ``trellis2_blip3o/road``; ``tests/test_road_cpu.py`` pins these files against it.
 
 Policy: the algorithm is verbatim (loss formulas, matcher, projector, teacher forward with colors = ones and points in
 the dataset frame, token pooling, CLS handling). The one substitution is a torch-native farthest-point sample in place

@@ -1,14 +1,14 @@
 """Conditioning assembly: records -> cross-attention tokens + key mask, for training and for CFG inference.
 
-One function serves both (ISSUES C-26..C-34). Token order is [DINO ; Qwen] for image inputs, Qwen only for text.
+One function serves both. Token order is [DINO ; Qwen] for image inputs, Qwen only for text.
 
-Addition order (bf16 in training, fp32 at eval — it matters for bit parity, C-26):
+Addition order (bf16 in training, fp32 at eval — it matters for bit parity):
   Qwen: connector(qwen * keep) -> + view code (multi-image only) -> + patch code (image tokens) -> + seg[1]
   DINO: dino -> + view code (single image: row 0) -> + seg[0] -> * keep
-Dropout (independent per row, C-28): ``drop`` zeroes the Qwen hidden before the connector and the DINO values after
+Dropout (independent per row): ``drop`` zeroes the Qwen hidden before the connector and the DINO values after
 the codes, keys stay visible (this is the CFG unconditional); ``ddrop`` masks the DINO keys; ``qdrop`` masks the
 Qwen keys and never coincides with ``ddrop``. Text rows only have ``drop``.
-The CFG unconditional is therefore NOT all zeros: its Qwen half is connector(0) + codes (C-27).
+The CFG unconditional is therefore NOT all zeros: its Qwen half is connector(0) + codes.
 """
 from __future__ import annotations
 

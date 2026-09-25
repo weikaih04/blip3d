@@ -1,4 +1,4 @@
-"""Items -> one training batch (docs/INTERFACES.md §1). Runs in dataloader workers.
+"""Items -> one training batch. Runs in dataloader workers.
 
 | key | when |
 |---|---|
@@ -10,7 +10,7 @@
 
 Sparse targets are packed with TRELLIS.2's own collate functions (``SLat.collate_fn`` for shape, ``SLatPbr.collate_fn``
 for tex), exactly as v12 did, so the batch index column, layout cache and dtypes are identical.
-Rules the downstream code relies on (scan/04 §5.9): one task and one modality per batch; tex all-or-none (a batch
+Rules the downstream code relies on: one task and one modality per batch; tex all-or-none (a batch
 where only some rows carry tex drops it, and says so once); align points all-or-none (raises).
 ``tex_valid`` is emitted whenever tex is (all True unless placeholder rows are present).
 """

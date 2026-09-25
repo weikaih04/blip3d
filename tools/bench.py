@@ -3,8 +3,8 @@
 structure writes error.json and no asset: a declared failure, never a stub). Resumable (finished cases are skipped).
 
     python tools/bench.py --manifest <eval47.jsonl> --output <dir> --mode image \
-        --separate keep/v12/s2_ss/checkpoint-106000_ema keep/v12/s2_shape/checkpoint-106000_ema keep/v12/s2_tex/checkpoint-106000_ema
-    python tools/bench.py ... --mode text --unified keep/v12/s3_unify_4n/checkpoint-17000_ema --sampler refine
+        --separate <ss ckpt> <shape ckpt> <tex ckpt>
+    python tools/bench.py ... --mode text --unified <unified ckpt> --sampler refine
 """
 from __future__ import annotations
 
@@ -35,7 +35,7 @@ def main():
     g.add_argument("--unified")
     ap.add_argument("--sampler", choices=["refine", "joint", "interleave"], default="refine")
     ap.add_argument("--k0", type=int, default=7)
-    ap.add_argument("--fixed", action="store_true", help="unified: the U-02/04/06 fixes instead of v12 numerics")
+    ap.add_argument("--fixed", action="store_true", help="unified: the inference fixes (UnifiedOptions.fixed) instead of v12 numerics")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--count", type=int, default=10 ** 9)
     ap.add_argument("--start-index", type=int, default=0)

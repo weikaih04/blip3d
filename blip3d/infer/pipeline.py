@@ -1,8 +1,8 @@
 """One entry point for generation: separate towers (the v12 product path) or the unified model (refine / joint /
 interleave). Inputs: renders / images / text -> prep -> encoder record -> latents -> mesh -> GLB.
 
-    pipe = Pipeline.separate(ss="keep/v12/s2_ss/checkpoint-106000_ema", shape=..., tex=...)
-    pipe = Pipeline.unified("keep/v12/s3_unify_4n/checkpoint-17000_ema", mode="refine")
+    pipe = Pipeline.separate(ss="<ss ckpt>", shape="<shape ckpt>", tex="<tex ckpt>")
+    pipe = Pipeline.unified("<unified ckpt>", mode="refine")
     lat = pipe.generate(pipe.prep_text("a red chair"), seed=0)
     pipe.export(lat, "out/")                  # full.glb, shape.obj, shape.glb
 """

@@ -1,5 +1,5 @@
 # VENDORED VERBATIM from ROAD @ c847391 — training/uni3d/models/uni3d.py
-# Do not edit: tests/test_road_cpu.py pins this against the v12 copy.
+# Vendored verbatim from upstream ROAD; do not edit.
 # Modified from Uni3D: reduced to point-encoder construction for ROAD training.
 import timm
 

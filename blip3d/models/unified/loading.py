@@ -1,4 +1,4 @@
-"""Load a v12 S3 checkpoint into Blip3DUnified + its three connectors (strict; ISSUES U-20..U-22)."""
+"""Load a v12 S3 checkpoint into Blip3DUnified + its three connectors (strict)."""
 from __future__ import annotations
 
 from dataclasses import dataclass

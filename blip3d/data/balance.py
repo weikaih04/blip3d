@@ -7,7 +7,7 @@ same constant. This removes the rank skew that the loss path's collectives turn 
 Cost of an item = ``median + vox(sha)`` (the median voxel count stands in for the fixed SS cost). Per-task target =
 ``per_batch * (median + mean vox over the task's records)``. A missing sha costs the median.
 
-Fix over v12 (scan/04 §5.8): items whose cost can never fit a batch near the target (vox above ~11.8k) sat in the
+Fix over v12: items whose cost can never fit a batch near the target (vox above ~11.8k) sat in the
 buffer forever, shrinking it. ``max_age`` forces any item that has waited that many pops into the next batch
 (``None`` reproduces v12).
 """

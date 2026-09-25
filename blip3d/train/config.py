@@ -1,8 +1,8 @@
-"""A training recipe = one yaml file (recipes/*.yaml). Everything that changes numbers is here and is written into
-every checkpoint (``blip3d_recipe.json``); constants of the v12 recipe are hard-coded in the modules that use them.
+"""A training config = one yaml file (configs/train/*.yaml). Everything that changes numbers is here and is written
+into every checkpoint (``blip3d_config.json``); constants of the recipe are hard-coded in the modules that use them.
 
 Paths: ``init.from`` / ``resume.from`` / ``ema.from`` are absolute or relative to ``paths.runs``; ``data`` names a file
-in recipes/data/ (or is a path)."""
+in configs/data/ (or is a path)."""
 from __future__ import annotations
 
 import dataclasses
@@ -39,14 +39,14 @@ class Compute:
 @dataclass
 class Compat:
     """Reproduce a v12 behaviour instead of its fix (for A/B and bit-parity tests)."""
-    shared_t: bool = False           # T-01: timesteps from the CPU generator shared by all ranks
-    data_replay: bool = False        # T-04: data stream restarts from step 0 on every resume
-    unified_v12_drops: bool = False  # U-05: geo lane never sees a CFG drop in S3
-    full_model_hidden: bool = False  # C-03: Qwen hidden via the generation model (computes unused LM-head logits)
+    shared_t: bool = False           # timesteps from the CPU generator shared by all ranks
+    data_replay: bool = False        # data stream restarts from step 0 on every resume
+    unified_v12_drops: bool = False  # geo lane never sees a CFG drop in S3
+    full_model_hidden: bool = False  # Qwen hidden via the generation model (computes unused LM-head logits)
 
 
 @dataclass
-class Recipe:
+class TrainConfig:
     name: str
     stage: str                                  # s1 | s2 | s3 | cont
     data: str
@@ -82,7 +82,7 @@ class Recipe:
     def data_path(self) -> str:
         if os.path.isfile(self.data):
             return self.data
-        return str(REPO_ROOT / "recipes" / "data" / f"{self.data}.yaml")
+        return str(REPO_ROOT / "configs" / "data" / f"{self.data}.yaml")
 
     def out_dir(self) -> str:
         return self.resolve(self.output_dir or self.name)
@@ -98,17 +98,17 @@ def _set(d: Dict, dotted: str, value: str):
     d[keys[-1]] = yaml.safe_load(value)
 
 
-def load_recipe(path: str, overrides: Optional[List[str]] = None) -> Recipe:
+def load_config(path: str, overrides: Optional[List[str]] = None) -> TrainConfig:
     """``overrides``: ``key.sub=value`` strings (yaml-parsed values)."""
     if not os.path.isfile(path):
-        path = str(REPO_ROOT / "recipes" / (path if path.endswith(".yaml") else path + ".yaml"))
+        path = str(REPO_ROOT / "configs" / "train" / (path if path.endswith(".yaml") else path + ".yaml"))
     raw = yaml.safe_load(open(path))
     for o in overrides or []:
         k, v = o.split("=", 1)
         _set(raw, k, v)
     raw["compute"] = Compute(**raw.get("compute", {}))
     raw["compat"] = Compat(**raw.get("compat", {}))
-    r = Recipe(**raw)
+    r = TrainConfig(**raw)
     if r.stage not in ("s1", "s2", "s3", "cont"):
         raise ValueError(f"stage {r.stage!r}")
     if (r.stage == "s3") != (r.tower is None):

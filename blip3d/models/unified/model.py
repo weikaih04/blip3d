@@ -3,9 +3,7 @@
 Shape and tex lanes share one union softmax per block (fused varlen attention, corner-masked: at t_s = 0 the geo lane
 is exactly the specialist); the SS tower runs as a third, dense lane interleaved block by block and lends its K/V
 (re-roped into the 32^3 frame) as a third key segment; streams are told apart by quarter-turn tags on the identity-pad
-rotation pair. Method bodies are carried over verbatim from the v12 implementation (`trellis2_blip3o/unified_geotex.py`
-@ 25c4751); only the options v12 never used were removed (gated coupling, cond-stream mode, one-way pair, x-attn anneal,
-elastic memory, from-scratch MMDiT, two-tower assembly).
+rotation pair. Only the fused attention path is kept.
 """
 import torch
 import torch.nn as nn
@@ -565,7 +563,7 @@ class Blip3DUnified(nn.Module):
         h_s = manual_cast(geo.input_layer(x_s), geo.dtype)
         t_emb_s = geo.t_embedder(t_s)
         if t_x is not None and getattr(self, "t_mixer_s", None) is not None:
-            # ISSUES U-03: training adds cross_alpha_s * t_mixer_s(t_x) to the geo time embedding; v12's cache omitted
+            # training adds cross_alpha_s * t_mixer_s(t_x) to the geo time embedding; v12's cache omitted
             # it (t_x=None keeps that). With it the K/V depend on t_x, so the caller recomputes them per tex step.
             t_emb_s = t_emb_s + self.cross_alpha_s * self.t_mixer_s(t_x)
         mod_s = manual_cast(geo.adaLN_modulation(t_emb_s), geo.dtype)

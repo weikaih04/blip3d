@@ -1,10 +1,9 @@
 # VENDORED VERBATIM from ROAD @ c847391 —
 # step1x3d_geometry/systems/shape_rectified_flow.py:29-41 (class AlignMLP).
-# Do not edit: tests/test_road_cpu.py pins this against the v12 copy.
+# Vendored verbatim from upstream ROAD; do not edit.
 #
 # Note: structurally this is the same 3-layer SiLU MLP as the official REPA
-# build_mlp already in trellis2_blip3o/repa.py (Linear→SiLU→Linear→SiLU→Linear,
-# hidden 2048). We vendor ROAD's own class anyway so the ROAD path is traceable
+# build_mlp (Linear→SiLU→Linear→SiLU→Linear, hidden 2048). We vendor ROAD's own class anyway so the ROAD path is traceable
 # line-for-line to their release, not to an equivalence argument.
 import torch.nn as nn
 

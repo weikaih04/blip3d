@@ -1,6 +1,6 @@
 """The three TRELLIS.2-4B flows (SS 16³ dense, shape SLAT 32³, tex SLAT 32³), their frozen decoders and latent statistics.
 
-Two precision layouts exist in v12 and both are part of the numbers (ISSUES I-13):
+Two precision layouts exist in v12 and both are part of the numbers:
 * ``released`` — the model as TRELLIS.2 builds it (blocks in bf16, boundary layers / norms in fp32); every v12
   separate-tower evaluation ran this layout, with the trained bf16 weights copied in.
 * ``bf16``     — every parameter cast to bf16 except complex buffers (SS ``rope_phases``); what training used, and what

@@ -1,4 +1,4 @@
-"""Build the trainable module of a recipe: a Blip3DTower (S1, S2, continuation) or the unified model (S3)."""
+"""Build the trainable module of a training config: a Blip3DTower (S1, S2, continuation) or the unified model (S3)."""
 from __future__ import annotations
 
 import torch
@@ -8,10 +8,10 @@ from ..cond.stamp import ViewCodes
 from ..models.blip3d import Blip3DTower, enable_elastic_gc
 from ..models.towers import released_flow, to_bf16_keep_complex
 from .ckpt import tower_state
-from .recipe import Recipe
+from .config import TrainConfig
 
 
-def build_tower(r: Recipe, trellis2_ckpt: str) -> Blip3DTower:
+def build_tower(r: TrainConfig, trellis2_ckpt: str) -> Blip3DTower:
     """Stock TRELLIS.2 flow in the uniform-bf16 training layout + a fresh connector + view codes (+ ROAD on SS), then
     ``init`` weights if given. Buffers (codes, ROAD step) are never trainable."""
     flow = to_bf16_keep_complex(released_flow(r.tower, trellis2_ckpt))

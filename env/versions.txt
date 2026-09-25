@@ -1,2 +1,0 @@
-torch 2.6.0+cu124 cuda 12.4 | transformers 5.2.0 | deepspeed 0.19.0 | numpy 1.26.4
-numpy WITHOUT PYTHONNOUSERSITE: 2.2.6 /fsx/home/weikai.huang/.local/lib/python3.10/site-packages/numpy/__init__.py

@@ -1,7 +1,0 @@
--e git+https://github.com/weikaih04/BLIP3o.git@25c4751ec24b77059c60485a853fc1298ef03802#egg=blip3o_next
-cumesh (local build)
-diff_gaussian_rasterization (local build)
-flex_gemm (local build)
-nvdiffrast (local build)
-nvdiffrec_render (local build)
--e git+https://github.com/weikaih04/TRELLIS.2.git@2ed033d1ecd2ddf5a5e3d18958efe7260e733f2f#egg=o_voxel&subdirectory=o-voxel

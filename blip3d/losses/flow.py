@@ -2,10 +2,10 @@
 
 Upstream TRELLIS.2 (trainers/flow_matching/flow_matching.py) with sigma_min 1e-5:
     x_t = (1 - t) x0 + (sigma_min + (1 - sigma_min) t) eps,   v* = (1 - sigma_min) eps - x0,   model input t*1000.
-Timesteps: SS logitNormal(mean 1, std 1), shape/tex uniform. v12 contracts kept on purpose (docs/scan/02 §4.1):
+Timesteps: SS logitNormal(mean 1, std 1), shape/tex uniform. v12 contracts kept on purpose:
 * the noise is drawn (CUDA) BEFORE t (CPU) and t is cast to the target dtype (bf16) before x_t and t*1000 are formed;
 * loss = plain MSE over every element (dense) or every voxel of the batch (sparse), in fp32, under bf16 autocast.
-Timestep RNG: v12 drew t from the process CPU generator, identical on every rank (ISSUES T-01). BLIP3D draws from a
+Timestep RNG: v12 drew t from the process CPU generator, identical on every rank. BLIP3D draws from a
 per-rank ``generator`` the trainer seeds from (seed, rank, step); ``generator=None`` reproduces the old shared draw.
 """
 from __future__ import annotations

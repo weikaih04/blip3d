@@ -3,7 +3,7 @@ name: blip3d-v12-s2-shape
 stage: s2
 tower: shape
 data: v12_shape
-init: {from: keep/v12/s1_connector/shape_20000_ema, use_ema: false}
+init: {from: blip3d-v12-s1-shape/checkpoint-20000, use_ema: true}   # end of the S1 stable phase
 trainable: all
 lr: 2.0e-5
 max_steps: 106000

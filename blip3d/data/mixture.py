@@ -1,6 +1,6 @@
 """Task mixture: one task per batch, drawn by weight, rank-synced; per-rank index streams; optional voxel balance.
 
-Seeding (scan/04 §5.1-5.3), identical to v12 for a given base seed:
+Seeding, identical to v12 for a given base seed:
 * task draw   ``default_rng((base * 1_000_003) ^ (worker + 1))`` — no rank term, so every rank trains the same task
   on the same step (a text batch and an image batch touch different parameters; mismatched ranks hang or average
   a gradient against a structural zero). The per-batch multi-image view count comes from the same generator.
@@ -167,7 +167,8 @@ def _paths_env() -> Dict[str, str]:
     try:
         from ..utils.paths import get_paths
         p = get_paths()
-        return {"manifests": p.manifests, "data_root": p.data_root, "runs": p.runs}
+        return {k: v for k, v in {"manifests": p.manifests, "data_root": p.data_root, "runs": p.runs,
+                                  "voxel_table": p.voxel_table}.items() if v}
     except FileNotFoundError:
         return {}
 
@@ -219,7 +220,7 @@ def task_configs(cfg: Dict[str, Any], *, align_points: bool) -> List[TaskConfig]
 
 def build_mixture(cfg_path: str, *, per_gpu_bs: int, seed: int, resume_step: int = 0, compat_replay: bool = False,
                   align_points: bool = False, qwen_path: str) -> Mixture:
-    """Build the training mixture from a data yaml (recipes/data/*.yaml).
+    """Build the training mixture from a data yaml (configs/data/*.yaml).
 
     ``compat_replay``: v12 data semantics end to end — base seed ``seed`` regardless of ``resume_step`` (every
     resume replays the stream from its start), unseeded per-item draws, any load error resampled, pbr read even when

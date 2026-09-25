@@ -3,7 +3,7 @@ name: blip3d-v12-s2-ss
 stage: s2
 tower: ss
 data: v12_ss
-init: {from: keep/v12/s1_connector/ss_20000_ema, use_ema: false}
+init: {from: blip3d-v12-s1-ss/checkpoint-20000, use_ema: true}   # end of the S1 stable phase
 trainable: all
 lr: 2.0e-5
 max_steps: 106000

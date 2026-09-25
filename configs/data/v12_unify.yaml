@@ -31,5 +31,5 @@ tasks:
     views: {sampler: weighted, n_probs: [0.15, 0.25, 0.6], max_views: 4} # n = 2, 3, 4, locked per batch
 sampling: {granularity: batch, temperature: 1.0}
 # voxel balance: rebuild the table whenever the pools change (it is keyed by sha)
-balance: {enabled: true, table: /fsx/home/weikai.huang/_lc/balance/voxels_v11.npz, buf_mult: 24, max_age: 64}
+balance: {enabled: true, table: "${voxel_table}", buf_mult: 24, max_age: 64}
 loader: {num_workers: 8, resample_tries: 8}

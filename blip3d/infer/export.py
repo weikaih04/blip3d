@@ -1,4 +1,4 @@
-"""Latents -> mesh -> GLB (ISSUES I-17..I-19). Decimation 200k, texture 2048, webp, remesh band 1; no pre-simplify (v12)."""
+"""Latents -> mesh -> GLB. Decimation 200k, texture 2048, webp, remesh band 1; no pre-simplify (v12)."""
 from __future__ import annotations
 
 import logging

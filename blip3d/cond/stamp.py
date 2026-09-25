@@ -1,4 +1,4 @@
-"""CondStamp: fixed codes added to the conditioning tokens (ISSUES C-18..C-26).
+"""CondStamp: fixed codes added to the conditioning tokens.
 
 * segment code  (2, C): row 0 = DINO tokens, row 1 = every Qwen token; two orthogonal random vectors, L2 4.8.
 * patch code    (P*P, C): fixed 2D sin-cos table, bilinearly sampled at each Qwen image token's own normalised
@@ -55,7 +55,7 @@ def view_codes(n: int, C: int, scale: float, start: int = 0) -> torch.Tensor:
 
 class ViewCodes(torch.nn.Module):
     """The model-level view-code table. Mode and scale are stored explicitly, so the table can be extended past the
-    trained number of views with the exact rule (C-24) instead of recovering the scale from a bf16 row."""
+    trained number of views with the exact rule instead of recovering the scale from a bf16 row."""
 
     def __init__(self, n: int = 16, dim: int = 1024, scale: float = 0.2, table: Optional[torch.Tensor] = None):
         super().__init__()
@@ -73,7 +73,7 @@ class ViewCodes(torch.nn.Module):
 
 def image_token_rc(ids: torch.Tensor, grids: torch.Tensor, image_pad_id: int, merge: int) -> torch.Tensor:
     """(T, 2) normalised cell-centre (row, col) of each image token within its own view; -1 elsewhere.
-    Raster order within each image, restarting at every image (C-18)."""
+    Raster order within each image, restarting at every image."""
     rc = torch.full((ids.shape[0], 2), -1.0, device=ids.device)
     pos = (ids == image_pad_id).nonzero(as_tuple=False).flatten()
     o = 0
@@ -103,7 +103,7 @@ def image_token_views(ids: torch.Tensor, grids: torch.Tensor, image_pad_id: int,
 
 def add_patch_code(x: torch.Tensor, table: Optional[torch.Tensor], rc: Optional[torch.Tensor]) -> torch.Tensor:
     """Bilinear (align_corners=False) sample of the P×P table at each token's rc; tokens with rc < 0 untouched.
-    Table and weights are cast to ``x.dtype`` (bf16 in training), as in v12 (C-19)."""
+    Table and weights are cast to ``x.dtype`` (bf16 in training), as in v12."""
     if table is None or rc is None:
         return x
     rc = rc.to(x.device).float()

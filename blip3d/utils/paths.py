@@ -27,6 +27,7 @@ class Paths:
     ss_decoder: str
     encoders: dict = field(default_factory=dict)
     uni3d_ckpt: Optional[str] = None
+    voxel_table: Optional[str] = None
 
     def hf_snapshot(self, ident: str) -> str:
         """``'org/name@rev'`` → local snapshot dir in ``hf_cache`` (rev may be a prefix). Raises if absent."""

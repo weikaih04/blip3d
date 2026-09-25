@@ -1,4 +1,4 @@
-"""SS-tower readout (port of lc/ss_road_eval.py): 64³ occupancy IoU against the GT structure for the image arm and the
+"""SS-tower readout: 64³ occupancy IoU against the GT structure for the image arm and the
 text arm, plus text self-consistency (the same caption, seeds 0 and 1). Released SS sampler, EMA weights.
 
 Difference from v12, on purpose: the image arm uses the TRAINING framing (``prep_render``: Qwen sees the raw render,

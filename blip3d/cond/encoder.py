@@ -1,12 +1,12 @@
 """GPU half of the conditioning: frozen Qwen3-VL-2B and DINOv3 features for a batch of prep dicts.
 
 Qwen: one forward over the right-padded batch; the conditioning is the last hidden layer (post final RMSNorm)
-taken from the base model, so no LM-head logits are computed (C-03). Structural tokens are masked (C-04); text
-records are compacted to the kept tokens (C-05). DINO: TRELLIS.2's DinoV3FeatureExtractor (final norm skipped,
-un-affine layer_norm over 1029 tokens per 512² view) on ImageNet-normalised pixels (C-15).
+taken from the base model, so no LM-head logits are computed. Structural tokens are masked; text
+records are compacted to the kept tokens. DINO: TRELLIS.2's DinoV3FeatureExtractor (final norm skipped,
+un-affine layer_norm over 1029 tokens per 512² view) on ImageNet-normalised pixels.
 
 Both encoders are identified by ``<hf id>@<revision>``; the identity is required and is written into checkpoints.
-Records hold fp16 features (C-16) and these fields:
+Records hold fp16 features and these fields:
   qwen (T, 2048) fp16, qwen_keep (T,) bool, [qwen_rc (T, 2), qwen_views (T,) long for image inputs],
   [dino (K*1029, 1024) fp16, dino_keep, dino_views (K*1029,) long], modality, views.
 """
@@ -66,7 +66,7 @@ class CondEncoder:
         L = max(lens)
         ids = torch.full((B, L), self.pad_id, dtype=torch.long)
         am = torch.zeros((B, L), dtype=torch.long)
-        for i, p in enumerate(preps):           # RIGHT padding: left padding shifts mRoPE positions (C-12)
+        for i, p in enumerate(preps):           # RIGHT padding: left padding shifts mRoPE positions
             ids[i, :lens[i]] = p["input_ids"]
             am[i, :lens[i]] = 1
         ids, am = ids.to(dev), am.to(dev)

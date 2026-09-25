@@ -1,4 +1,4 @@
-"""Time grids, guidance and the Euler update shared by every sampler (ISSUES I-01..I-05)."""
+"""Time grids, guidance and the Euler update shared by every sampler."""
 from __future__ import annotations
 
 from typing import List

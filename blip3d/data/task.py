@@ -4,7 +4,7 @@ v12 had five registered dataset classes for this (text_to_3d, text_to_3d_weighte
 multi_image_to_3d plus the base) and routed on their names. Here the modality is a field and the task name is only
 a label for logging (``t_real``, ``t_synth``, ``i1``, ``im``).
 
-Per-item randomness follows v12 draw for draw (scan/04 §2.2-2.3), so with the same generator the same view,
+Per-item randomness follows v12 draw for draw, so with the same generator the same view,
 caption and template come out:
 * text, ``fallback: long`` (v12 text_to_3d_weighted): a tier is drawn from the four fixed-order weights; a tier the
   asset lacks falls back to the long caption.

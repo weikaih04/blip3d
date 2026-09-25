@@ -1,27 +1,26 @@
 """S3 loss of the unified three-tower model (geo = shape SLAT, tex = pbr SLAT, ss = dense 16^3 structure).
 
-Port of v12 ``flow_heads.compute_unified_geotex_loss`` (FH:979-1689) and its helpers, v12-live branches only
-(docs/scan/03 §2, ISSUES U-10..U-19). What one step does:
+What one step does:
 
-1. Conditioning, one ``assemble`` per lane (C-31). The tex lane DRAWS the CFG / DINO / Qwen drops; the SS lane
-   REPLAYS them; the geo lane replays them too (fixed default, U-05 / DECIDE-3 (c)) or, with ``compat_v12``, is never
+1. Conditioning, one ``assemble`` per lane. The tex lane DRAWS the CFG / DINO / Qwen drops; the SS lane
+   REPLAYS them; the geo lane replays them too (fixed default) or, with ``compat_v12``, is never
    dropped (v12 still consumed one ``rand(B)`` there on image batches — reproduced). geo/tex get per-row lists of the
    kept tokens (varlen cross-attention); SS gets the padded tensor and a (B,1,1,T) sdpa mask, or None when no row is
    padded (``GEOTEX_XATTN_FLASH=1`` in the v12 S3 launcher).
 2. Timesteps: row classes solo / lag / clean (``sample_timestep_triples``) with the invariant t_ss <= t_s <= t_x.
-   The lag pairing uses the constant ``TRAIN_LAG_GRID`` (12 nodes, SS shift 5, slat shift 3; U-06).
+   The lag pairing uses the constant ``TRAIN_LAG_GRID`` (12 nodes, SS shift 5, slat shift 3).
 3. Noise, in the v12 order: geo, tex, SS (all on the default CUDA stream). t is cast to the TARGET dtype before it
-   is used and before x1000 (T-08: fp32 in S3, because SparseTensor targets bypass HF's bf16 cast).
+   is used and before x1000 (fp32 in S3, because SparseTensor targets bypass HF's bf16 cast).
 4. One unified forward under bf16 autocast; SS reads the slat lanes only on lag rows.
-5. Losses (U-13): tex voxel-balanced MSE on rows (tex_valid & not solo); SS row-balanced MSE on not-clean rows;
+5. Losses: tex voxel-balanced MSE on rows (tex_valid & not solo); SS row-balanced MSE on not-clean rows;
    SS dual term (a second ``ss_forward`` on the clean rows at a logitNormal t); geo voxel-balanced MSE on rows
    (t_s != 0) & not solo. Every helper that all-reduces is called unconditionally (a guarded collective is a hang).
 6. Every ``probe_every`` micro-steps, the condition-sensitivity probe (two no-grad forwards at t = 1, conditions
    rolled by one row) — it draws noise, so it is part of the RNG stream.
 
 Timestep RNG: v12 drew timesteps on the default CUDA generator, which the trainer reseeds per rank, so S3 was never
-affected by T-01. A ``generator`` may be passed to own the timestep draws (and the SS-dual t); ``compat_v12`` ignores
-it. ``compat_v12=True`` reproduces v12 bit for bit (tests/test_unified_loss_cpu.py, tests/test_unified_loss_gpu.py).
+affected by the shared-timestep issue. A ``generator`` may be passed to own the timestep draws (and the SS-dual t); ``compat_v12`` ignores
+it. ``compat_v12=True`` reproduces v12 bit for bit.
 """
 from __future__ import annotations
 
@@ -40,7 +39,7 @@ CLS_CLEAN, CLS_SOLO, CLS_LAG = 0, 1, 2
 
 @dataclass(frozen=True)
 class UnifiedLossCfg:
-    """v12 S3 values (checkpoint-17000 config + lc/v12_s3_4n.sh). ``compat_v12`` restores the v12 behaviour of the
+    """v12 S3 values. ``compat_v12`` restores the v12 behaviour of the
     one number-changing fix here (geo lane never dropped) and ignores a passed timestep generator."""
     p_cfg: float = 0.1                 # mask_drop_prob (tex draws, SS and geo replay)
     p_dino: float = 0.3
@@ -56,7 +55,7 @@ class UnifiedLossCfg:
     ss_loss_w: float = 1.0
     ss_dual: bool = True
     geo_loss_w: float = 1.0
-    joint_cond_drop: bool = True       # geo replays the tex drops (U-05); forced False by compat_v12
+    joint_cond_drop: bool = True       # geo replays the tex drops; forced False by compat_v12
     xattn_flash_unpadded: bool = True  # SS sdpa mask -> None when no row is padded (v12 GEOTEX_XATTN_FLASH=1)
     probe_every: int = 200             # 0 = off
     cond_max_length: int = 10240       # Qwen tokens; v12 truncated with a warning (never fired), BLIP3D raises
@@ -102,7 +101,7 @@ def sample_timestep_pairs(B: int, device, p_corner: float = 0.2, p_corner2: floa
                           generator: Optional[torch.Generator] = None) -> Tuple[torch.Tensor, torch.Tensor]:
     """(t_s, t_x) with t_s <= t_x: t_s ~ U[0,1] first (uniform marginal), then t_x ~ U[t_s, 1]. Two edges on one
     uniform u: u < p_corner pins t_s = 0 and REDRAWS t_x ~ U[0,1] (the tex | given-mesh regime);
-    p_corner <= u < p_corner + p_corner2 pins t_x = 1 (mesh-only / the first joint step). v12 FH:682-751."""
+    p_corner <= u < p_corner + p_corner2 pins t_x = 1 (mesh-only / the first joint step)."""
     assert p_corner + p_corner2 <= 1.0 + 1e-6, f"p_corner {p_corner} + p_corner2 {p_corner2} > 1"
     t_s = _rand(B, device, generator)
     t_x = t_s + (1.0 - t_s) * _rand(B, device, generator)
@@ -124,7 +123,7 @@ def sample_timestep_triples(B: int, device, p_corner: float = 0.1, p_corner2: fl
                             p_solo: float = 0.0, p_lag: float = 0.3, k0_lo: int = 3, k0_hi: int = 11,
                             ss_logit_mean: float = 1.0, ss_logit_std: float = 1.0,
                             generator: Optional[torch.Generator] = None):
-    """(t_ss, t_s, t_x, cls), invariant t_ss <= t_s <= t_x by construction. v12 FH:788-902.
+    """(t_ss, t_s, t_x, cls), invariant t_ss <= t_s <= t_x by construction.
 
     solo  t_ss ~ logitNormal, slat pinned to noise (t_s = t_x = 1), slat losses masked.
     lag   u ~ U(k0/S, 1], k0 ~ U{k0_lo..k0_hi}: t_s = shift_3(u), t_ss = shift_5(u - k0/S), t_x = t_s + (1-t_s) U.
@@ -178,7 +177,7 @@ def _dist() -> bool:
 def row_balanced_mse(pred: torch.Tensor, target: torch.Tensor, keep: torch.Tensor) -> torch.Tensor:
     """Dense (B, ...) MSE over the kept rows, normalised by the GLOBAL kept-row count (x world, which DDP/ZeRO's
     gradient averaging cancels). Row selection, not multiply-by-zero: an empty local selection adds 0 to both
-    numerator and denominator and still carries a grad_fn. v12 FH:905-935."""
+    numerator and denominator and still carries a grad_fn."""
     p_sel, t_sel = pred[keep], target[keep]
     n_local = torch.tensor(float(p_sel.shape[0]), device=pred.device)
     sq = ((p_sel.float() - t_sel.float()) ** 2).flatten(1).mean(1).sum()
@@ -192,7 +191,7 @@ def row_balanced_mse(pred: torch.Tensor, target: torch.Tensor, keep: torch.Tenso
 
 def voxel_balanced_mse(pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
     """Sparse (N, C) MSE with per-voxel weight 1 / N_global regardless of how many voxels this rank drew.
-    v12 FH:938-976."""
+   """
     per_voxel = (pred - target).pow(2).mean(-1)
     n_local = per_voxel.numel()
     if not _dist():
@@ -267,7 +266,7 @@ def build_lane_conds(connectors: Dict[str, torch.nn.Module], views, cond_batch: 
 def unified_loss(model, connectors: Dict[str, torch.nn.Module], views, batch: Dict, cond_batch: Dict[str, torch.Tensor],
                  *, step: int, generator: Optional[torch.Generator] = None, cfg: UnifiedLossCfg = UnifiedLossCfg(),
                  state: Optional[UnifiedLossState] = None) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
-    """One S3 micro-step. ``batch``: targets per docs/INTERFACES.md §1 (``shape`` shape-norm SparseTensor, ``tex``
+    """One S3 micro-step. ``batch``: targets (``shape`` shape-norm SparseTensor, ``tex``
     pbr-norm SparseTensor on the same coords, ``ss`` raw dense latent, optional ``tex_valid``), on the GPU.
     ``cond_batch``: ``cond.assemble.collate`` of the encoder records. ``step``: this process's micro-step counter
     from 0 (the probe fires when ``step % probe_every == 0``, as v12's call counter did).
@@ -297,7 +296,7 @@ def unified_loss(model, connectors: Dict[str, torch.nn.Module], views, batch: Di
               f"inference-aligned {(tri.sum() / sup.sum().clamp_min(1)).item():.0%} | solo {m_solo.float().mean():.2f} "
               f"lag {m_lag.float().mean():.2f} clean {m_clean.float().mean():.2f} (B={B}, this batch)", flush=True)
 
-    # targets, noise, x_t — t cast to the target dtype first (T-08)
+    # targets, noise, x_t — t cast to the target dtype first
     x0_x = batch["tex"]
     common_dt = x0_x.feats.dtype
     x0_s = batch["shape"].replace(batch["shape"].feats.to(common_dt))

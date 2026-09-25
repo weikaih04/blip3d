@@ -1,6 +1,6 @@
-"""Checkpoint format and the key map from v12 (BLIP3o-era) checkpoints. Old files are read as-is, never converted.
+"""Checkpoint format and the key map from v12 checkpoints. Old files are read as-is, never converted.
 
-v12 prefixes (docs/scan/02 §6, 03 §5): towers `ss_flow.*`, `shape_slat_512.*`, `tex_slat_512.*`; connectors
+v12 prefixes: towers `ss_flow.*`, `shape_slat_512.*`, `tex_slat_512.*`; connectors
 `diffusion_connector.*` (S1/S2: the tower's own; S3: the tex lane), `geo_connector.*`, `ss_connector.*` (S3);
 `dino_view_embed` (model-level view codes); ROAD `repa_projector.*`, `_road_step`; unified model `unified_geotex.*`.
 EMA files hold only the trained keys and are overlaid on model.safetensors.

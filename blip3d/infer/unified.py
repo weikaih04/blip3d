@@ -4,7 +4,7 @@ refine     SS alone -> coords -> shape+tex joint loop (tex time warped by alpha)
 joint      the same without the tex re-sample
 interleave refine's first round, then SS re-runs READING the slat on the trained lag schedule, new coords, joint(+refine)
 
-Numerics follow v12 exactly by default (``UnifiedOptions()``); the fixes from ISSUES U-02/03/04/06 are opt-in until
+Numerics follow v12 exactly by default (``UnifiedOptions()``); the four inference fixes are opt-in until
 they are measured (``UnifiedOptions.fixed()``). ``cache_ss_kv`` is exact (verified bit-identical) and on by default.
 """
 from __future__ import annotations
@@ -26,10 +26,10 @@ from .stages import occ_to_coords
 @dataclass(frozen=True)
 class UnifiedOptions:
     cache_ss_kv: bool = True           # exact
-    ss_uncond_in_uncond: bool = False  # U-04: v12 fed the SS lane the positive cond in the uncond forward
-    tex_reads_ss: bool = False         # U-02: v12 refine / tex-on-mesh ran without the SS K/V training always had
-    lag_on_train_grid: bool = False    # U-06: v12 interleave paired nodes on the preset's SS steps (24 on the text path)
-    geo_kv_tmix: bool = False          # U-03: v12's cached geo pass dropped the t_mixer_s(t_x) term (K/V recomputed per step)
+    ss_uncond_in_uncond: bool = False  # v12 fed the SS lane the positive cond in the uncond forward
+    tex_reads_ss: bool = False         # v12 refine / tex-on-mesh ran without the SS K/V training always had
+    lag_on_train_grid: bool = False    # v12 interleave paired nodes on the preset's SS steps (24 on the text path)
+    geo_kv_tmix: bool = False          # v12's cached geo pass dropped the t_mixer_s(t_x) term (K/V recomputed per step)
 
     @classmethod
     def fixed(cls) -> "UnifiedOptions":
@@ -110,7 +110,7 @@ class UnifiedSampler:
             x_s = x_s.replace(x_s.feats - (tss - tsp) * guided(op[0].feats.float(), on[0].feats.float(),
                                                                 x_s.feats.float(), tss, ps))
         if refine:
-            # v12 ran the refine pass without the SS K/V that training always had (U-02 fixes it, opt-in)
+            # v12 ran the refine pass without the SS K/V that training always had (the tex_reads_ss option adds it)
             ss_kv = self._ss_kv_for_tex(z, cs) if self.o.tex_reads_ss else None
             x_x = self.tex_given_mesh(coords, x_s.feats, cs, seed=seed + 1, ss_kv=ss_kv)
         return x_s, x_x

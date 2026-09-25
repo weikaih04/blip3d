@@ -5,7 +5,7 @@ TRELLIS.2 reads its backends from the environment at import time (``trellis2/mod
 
 * training   dense ``ATTN_BACKEND=flash_attn_3``; sparse attention follows it (FA3); fused modulate kernels on.
 * evaluation ``ATTN_BACKEND=flash_attn`` (FA2) for dense and sparse attention — every v12 benchmark and demo
-  entry point set this before importing trellis2 (ISSUES.md §8), so goldens are recorded with it.
+  entry point set this before importing trellis2, so goldens are recorded with it.
 
 Sparse convolution is ``flex_gemm`` in both.
 """

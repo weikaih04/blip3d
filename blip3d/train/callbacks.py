@@ -20,7 +20,7 @@ def _rank() -> int:
 class RankRNGCallback(TrainerCallback):
     """HF seeds every rank identically. CUDA (noise, dropout draws): rank r > 0 reseeded to seed + 10000 (r + 1) at train
     begin, as v12. Timesteps: a dedicated per-rank generator seeded from (seed, rank, resume step), given to the model
-    as ``t_generator`` (ISSUES T-01). ``shared_t=True`` reproduces v12 (t from the shared CPU generator)."""
+    as ``t_generator``. ``shared_t=True`` reproduces v12 (t from the shared CPU generator)."""
 
     def __init__(self, shared_t: bool = False):
         self.shared_t = shared_t

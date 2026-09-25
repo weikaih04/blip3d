@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-"""Train one BLIP3D recipe (launch with torchrun on every node; see cluster/launch.py).
+"""Train one BLIP3D config (launch with torchrun on every node).
 
-    torchrun --nnodes N --nproc_per_node 8 ... tools/train.py recipes/s2_ss.yaml [--set compute.per_gpu_bs=4 ...]
+    torchrun --nnodes N --nproc_per_node 8 ... tools/train.py configs/train/s2_ss.yaml [--set compute.per_gpu_bs=4 ...]
 
-Resume is automatic: the recipe's ``resume`` checkpoint if set, else the latest ``checkpoint-*`` in the output dir.
+Resume is automatic: the config's ``resume`` checkpoint if set, else the latest ``checkpoint-*`` in the output dir.
 """
 from __future__ import annotations
 
@@ -26,32 +26,32 @@ from blip3d.cond.encoder import DINO_DEFAULT, QWEN_DEFAULT, CondEncoder  # noqa:
 from blip3d.train.callbacks import AdaptiveGradClipCallback, RankRNGCallback  # noqa: E402
 from blip3d.train.ckpt import from_v12, is_v12  # noqa: E402
 from blip3d.train.ema import EMACallback  # noqa: E402
-from blip3d.train.recipe import load_recipe  # noqa: E402
+from blip3d.train.config import load_config  # noqa: E402
 from blip3d.train.trainer import Blip3DTrainer  # noqa: E402
 from blip3d.utils.paths import REPO_ROOT, get_paths, resolve_hf_snapshot  # noqa: E402
 
 
-class RecipeStamp(TrainerCallback):
-    """Every checkpoint records the recipe and the encoder identities (ISSUES C-02: v12 recorded the wrong VLM)."""
+class ConfigStamp(TrainerCallback):
+    """Every checkpoint records its training config and the encoder identities."""
 
-    def __init__(self, recipe_json: str, encoders: dict):
-        self.blob = {"model": "blip3d", "version": "v12", "recipe": json.loads(recipe_json), "encoders": encoders}
+    def __init__(self, config_json: str, encoders: dict):
+        self.blob = {"model": "blip3d", "version": "v12", "config": json.loads(config_json), "encoders": encoders}
 
     def on_save(self, args, state, control, **kw):
         if state.is_world_process_zero:
             d = os.path.join(args.output_dir, f"checkpoint-{state.global_step}")
             if os.path.isdir(d):
-                json.dump(self.blob, open(os.path.join(d, "blip3d_recipe.json"), "w"), indent=2)
+                json.dump(self.blob, open(os.path.join(d, "blip3d_config.json"), "w"), indent=2)
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("recipe")
-    ap.add_argument("--set", nargs="*", default=[], help="recipe overrides, key.sub=value")
+    ap.add_argument("config")
+    ap.add_argument("--set", nargs="*", default=[], help="config overrides, key.sub=value")
     ap.add_argument("--dry-run", action="store_true", help="build model and data, run no step")
     a = ap.parse_args()
 
-    r = load_recipe(a.recipe, a.set)
+    r = load_config(a.config, a.set)
     if os.environ.get("BLIP3D_MEM_GB"):        # smoke tests beside another job on the same GPU
         lr_ = int(os.environ.get("LOCAL_RANK", "0"))
         torch.cuda.set_device(lr_)
@@ -66,7 +66,7 @@ def main():
 
     resume = r.resolve(r.resume) if r.resume else get_last_checkpoint(out) if os.path.isdir(out) else None
     if resume and r.resume and get_last_checkpoint(out):
-        resume = get_last_checkpoint(out)        # the run has progressed past the recipe's starting checkpoint
+        resume = get_last_checkpoint(out)        # the run has progressed past the config's starting checkpoint
     resume_step = json.load(open(os.path.join(resume, "trainer_state.json")))["global_step"] if resume else 0
 
     if r.stage == "s3":
@@ -85,12 +85,12 @@ def main():
         n_tr = sum(p.numel() for p in model.parameters() if p.requires_grad)
         print(f"[blip3d] {r.name}: stage {r.stage} tower {r.tower} | trainable {n_tr / 1e6:.1f}M | "
               f"GA {r.compute.grad_accum} | resume {resume} (step {resume_step}) | out {out}", flush=True)
-        with open(os.path.join(out, "blip3d_recipe.json"), "w") as f:
+        with open(os.path.join(out, "blip3d_config.json"), "w") as f:
             f.write(r.to_json())
     if a.dry_run:
         return
 
-    ds_cfg = REPO_ROOT / "recipes" / "deepspeed" / ("zero1_fp32acc_universal.json" if r.compute.universal
+    ds_cfg = REPO_ROOT / "configs" / "deepspeed" / ("zero1_fp32acc_universal.json" if r.compute.universal
                                                      else "zero1_fp32acc.json")
     args = TrainingArguments(
         output_dir=out, run_name=r.name, max_steps=r.max_steps, seed=r.seed, bf16=True,
@@ -109,7 +109,7 @@ def main():
     enc = {"qwen": QWEN_DEFAULT, "dino": DINO_DEFAULT}
     trainer = Blip3DTrainer(
         model=model, args=args, train_dataset=mix.dataset, data_collator=mix.collate_fn,
-        callbacks=[ema, RankRNGCallback(shared_t=r.compat.shared_t), clip, RecipeStamp(r.to_json(), enc)],
+        callbacks=[ema, RankRNGCallback(shared_t=r.compat.shared_t), clip, ConfigStamp(r.to_json(), enc)],
         encoder_factory=lambda: CondEncoder(qwen, dino, device=str(args.device),
                                             full_model_hidden=r.compat.full_model_hidden),
         clip=clip, task_names=mix.task_names)

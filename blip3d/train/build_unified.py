@@ -20,7 +20,7 @@ from ..losses.unified import UnifiedLossCfg, UnifiedLossState, unified_loss
 from ..models.towers import released_flow, to_bf16_keep_complex
 from ..models.unified.model import Blip3DUnified
 from .ckpt import tower_state
-from .recipe import Recipe
+from .config import TrainConfig
 
 
 class Blip3DUnifiedTrainable(nn.Module):
@@ -30,7 +30,7 @@ class Blip3DUnifiedTrainable(nn.Module):
         self.connectors = nn.ModuleDict(connectors)
         self.views = views
         self.cfg = cfg
-        self.t_generator = None          # S3 draws its timesteps on the per-rank CUDA stream (never hit by T-01)
+        self.t_generator = None          # S3 draws its timesteps on the per-rank CUDA stream
         self._micro = 0
         self._state = UnifiedLossState()
 
@@ -44,7 +44,7 @@ class Blip3DUnifiedTrainable(nn.Module):
         return loss, logs
 
 
-def _tower(kind: str, r: Recipe, trellis2_ckpt: str):
+def _tower(kind: str, r: TrainConfig, trellis2_ckpt: str):
     sd = tower_state(r.resolve(r.init[kind]), kind, use_ema=bool(r.init.get("use_ema", False)), require_ema=False)
     flow = to_bf16_keep_complex(released_flow(kind, trellis2_ckpt))
     flow.load_state_dict({k[5:]: v for k, v in sd.items() if k.startswith("flow.")}, strict=True)
@@ -53,7 +53,7 @@ def _tower(kind: str, r: Recipe, trellis2_ckpt: str):
     return flow, conn, sd.get("views.table")
 
 
-def build_unified_trainable(r: Recipe, trellis2_ckpt: str) -> Blip3DUnifiedTrainable:
+def build_unified_trainable(r: TrainConfig, trellis2_ckpt: str) -> Blip3DUnifiedTrainable:
     geo, c_geo, _ = _tower("shape", r, trellis2_ckpt)
     tex, c_tex, table = _tower("tex", r, trellis2_ckpt)
     ss, c_ss, _ = _tower("ss", r, trellis2_ckpt)

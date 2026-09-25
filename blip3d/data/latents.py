@@ -1,6 +1,6 @@
 """Latent targets: loading, normalization, voxel cap, tex placeholder, ROAD align points. Runs in dataloader workers.
 
-Contracts (scan/04 §2.4-2.6, §2.9):
+Contracts:
 * SS latent ``ss_latent_64`` npz key ``z`` (fallback ``latent``), (8, 16, 16, 16) float32, NOT normalized
   (the TRELLIS.2 SS config has no normalization).
 * shape / pbr npz: ``coords`` (N, 3) uint8 -> int32, ``feats`` (N, 32) float32, normalized per channel with the

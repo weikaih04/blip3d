@@ -1,6 +1,6 @@
 """CPU half of the conditioning: image framing and tokenization. Safe to run in dataloader workers.
 
-Qwen and DINO see different framings of the same render (ISSUES C-13, C-14):
+Qwen and DINO see different framings of the same render:
 * Qwen: the full, uncropped render converted to RGB (alpha dropped, not composited);
   multi-image views are downscaled to ``im_tok_per_view`` vision tokens each.
 * DINO: the alpha-cropped render composited on black, resized to ``dino_size`` (LANCZOS), in [0, 1].

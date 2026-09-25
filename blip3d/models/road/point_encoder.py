@@ -13,10 +13,8 @@
 # select and upstream cannot; (3) when a cloud has fewer than `count` DISTINCT
 # points, argmax over an all-zero distance field returns index 0 repeatedly (both
 # implementations degrade; ~3.7% of the pool has <512 distinct voxels — graceful,
-# the teacher just sees duplicated groups). Validated on H200 in
-# _lc/third_party/uni3d_smoke_test.py (~30ms at bs8 x 10k points, fp16).
-# Everything below farthest_point_sample is byte-identical to upstream
-# (tests/test_road_align.py checks that).
+# the teacher just sees duplicated groups).
+# Everything below farthest_point_sample is byte-identical to upstream.
 import logging
 
 import torch

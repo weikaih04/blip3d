@@ -1,7 +1,7 @@
 # Dataset-side ROAD teacher input: numpy only, so dataloader workers never import timm.
 # Mirrors ROAD @ c847391 step1x3d_geometry/data/base.py:63-65,76-78 (_sample_rows): uniform random choice, with
 # replacement only when the cloud is short. The candidate pool is the occupied 32^3 voxel centres in the TRELLIS frame
-# (idx + 0.5)/R - 0.5, as in v12 (trellis2_blip3o/road/points.py).
+# (idx + 0.5)/R - 0.5.
 from typing import Optional
 
 import numpy as np

@@ -1,7 +1,7 @@
-"""Training data: manifests -> per-modality tasks -> a rank-synced task mixture -> batches (docs/INTERFACES.md §1).
+"""Training data: manifests -> per-modality tasks -> a rank-synced task mixture -> batches.
 
     from blip3d.data import build_mixture
-    mix = build_mixture("recipes/data/v12_ss.yaml", per_gpu_bs=4, seed=0, resume_step=step,
+    mix = build_mixture("configs/data/v12_ss.yaml", per_gpu_bs=4, seed=0, resume_step=step,
                         align_points=True, qwen_path=qwen_dir)
     loader = DataLoader(mix.dataset, batch_size=4, collate_fn=mix.collate_fn, num_workers=mix.num_workers)
 

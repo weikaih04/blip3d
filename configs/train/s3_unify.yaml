@@ -1,14 +1,13 @@
 # S3: the unified three-tower model (union attention, SS lane, fused kernels) initialised from the three S2 finals.
-# v12 ran 15k steps on 5 nodes then restarted weights-only on 4 nodes for 17k (3k cosine decay); this is the clean
-# single-run equivalent (32k, decay 3k).
+# 32k steps, the last 3k a cosine decay.
 name: blip3d-v12-s3-unify
 stage: s3
 data: v12_unify
 init:
-  shape: keep/v12/s2_shape/checkpoint-106000_ema
-  tex: keep/v12/s2_tex/checkpoint-106000_ema
-  ss: keep/v12/s2_ss/checkpoint-106000_ema
-  use_ema: false
+  shape: blip3d-v12-s2-shape/checkpoint-106000
+  tex: blip3d-v12-s2-tex/checkpoint-106000
+  ss: blip3d-v12-s2-ss/checkpoint-106000
+  use_ema: true
 trainable: all
 lr: 2.0e-5
 max_steps: 32000
