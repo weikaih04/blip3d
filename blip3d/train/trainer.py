@@ -14,6 +14,7 @@ from transformers import Trainer
 
 from .callbacks import AdaptiveGradClipCallback
 from .ema import unwrap
+from ..data.collate import to_sparse
 from .prefetch import LiveCondPrefetch
 
 
@@ -47,7 +48,7 @@ class Blip3DTrainer(Trainer):
         return LiveCondPrefetch(super().get_train_dataloader(), self.encoder(), self.args.device)
 
     def _prepare_inputs(self, inputs):
-        return {k: _to_device(v, self.args.device) for k, v in inputs.items()}
+        return {k: _to_device(v, self.args.device) for k, v in to_sparse(inputs).items()}
 
     def training_step(self, model, inputs, num_items_in_batch=None):
         if self._clip is not None and self._clip.engine is None and self.deepspeed is not None:

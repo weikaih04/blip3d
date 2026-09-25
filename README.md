@@ -6,13 +6,13 @@ per-tower fine-tuning, unified three-tower model).
 
 ```
 blip3d/cond     Qwen3-VL + DINOv3 encoder, preprocessing, position / segment / view codes, connector, CFG assembly
-blip3d/models   TRELLIS.2 towers, Blip3DTower, the unified three-tower model, ROAD alignment head
+blip3d/models   flows.py / decoders.py (the TRELLIS.2 networks we build on), Blip3DTower, the unified model, ROAD
 blip3d/losses   flow matching per tower, ROAD, the unified-model loss
 blip3d/data     manifests, latents, tasks (text / single image / multi image), mixture, voxel balance, collate
 blip3d/train    trainer (HF Trainer + DeepSpeed ZeRO-1), EMA, callbacks, configs, model builders
 blip3d/infer    sampler presets, cascade and unified samplers (refine / joint / interleave), export, Pipeline
 blip3d/eval     sparse-structure readout
-configs/        train/ (s1_*, s2_*, s3_unify) · data/ · deepspeed/ · infer/ · paths.example.yaml
+configs/        train/ (s1_*, s2_*, s3_unify) · data/ · model/ (flow architectures) · deepspeed/ · infer/ · paths.example.yaml
 tools/          train.py · infer.py · bench.py · readout.py
 ```
 

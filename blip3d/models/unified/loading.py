@@ -10,7 +10,7 @@ import torch.nn as nn
 from ...cond.connector import Connector
 from ...cond.stamp import ViewCodes
 from ...train.ckpt import connector_state, load_state
-from ..towers import released_flow, to_bf16_keep_complex
+from ..flows import build_flow, to_bf16_keep_complex
 from .model import Blip3DUnified
 
 PREFIX = "unified_geotex."
@@ -24,19 +24,19 @@ class UnifiedBundle:
     views: Optional[ViewCodes]
 
 
-def skeleton(trellis2_ckpt: str) -> Blip3DUnified:
-    """Three flows in the training (uniform bf16) layout, wrapped. The released weights are placeholders here —
-    every tensor is overwritten by the strict load that follows."""
-    geo = to_bf16_keep_complex(released_flow("shape", trellis2_ckpt))
-    tex = to_bf16_keep_complex(released_flow("tex", trellis2_ckpt))
-    ss = to_bf16_keep_complex(released_flow("ss", trellis2_ckpt))
+def skeleton() -> Blip3DUnified:
+    """The three flow architectures in the training (uniform bf16) layout, wrapped; the weights come from the strict
+    load that follows."""
+    geo = to_bf16_keep_complex(build_flow("shape"))
+    tex = to_bf16_keep_complex(build_flow("tex"))
+    ss = to_bf16_keep_complex(build_flow("ss"))
     return Blip3DUnified(geo, tex, ss)
 
 
-def load_unified(ckpt_dir: str, *, trellis2_ckpt: str, use_ema: bool = True, device: str = "cuda",
+def load_unified(ckpt_dir: str, *, use_ema: bool = True, device: str = "cuda",
                  connector_dtype: torch.dtype = torch.float32) -> UnifiedBundle:
     sd = load_state(ckpt_dir, use_ema=use_ema)
-    model = skeleton(trellis2_ckpt)
+    model = skeleton()
     v12 = any(k.startswith(PREFIX) for k in sd)          # v12 names, or BLIP3D (model.*, connectors.<lane>.*, views.table)
     pre = PREFIX if v12 else "model."
     uni = {k[len(pre):]: v for k, v in sd.items() if k.startswith(pre)}

@@ -19,7 +19,8 @@ import numpy as np  # noqa: E402
 
 from blip3d.cond.encoder import DINO_DEFAULT, QWEN_DEFAULT, CondEncoder  # noqa: E402
 from blip3d.eval.readout import heldout_records, ss_readout  # noqa: E402
-from blip3d.models.towers import load_decoders, load_tower  # noqa: E402
+from blip3d.models.decoders import load_decoders
+from blip3d.models.flows import load_tower  # noqa: E402
 from blip3d.utils.paths import get_paths, resolve_hf_snapshot  # noqa: E402
 
 
@@ -34,7 +35,7 @@ def main():
     p = get_paths()
     ck = a.ckpt if os.path.isabs(a.ckpt) else os.path.join(p.runs, a.ckpt)
     qwen = resolve_hf_snapshot(QWEN_DEFAULT, p.hf_cache)
-    tower = load_tower("ss", ck, trellis2_ckpt=p.trellis2_ckpt, use_ema=not a.raw)
+    tower = load_tower("ss", ck, use_ema=not a.raw)
     dec = load_decoders(p.trellis2_ckpt, p.ss_decoder)
     enc = CondEncoder(qwen, resolve_hf_snapshot(DINO_DEFAULT, p.hf_cache))
     recs = heldout_records(a.manifest or os.path.join(p.manifests, "val200_capT.jsonl"), a.n)

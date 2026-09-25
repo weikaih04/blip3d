@@ -17,7 +17,8 @@ from PIL import Image
 from ..cond import prep as P
 from ..cond.encoder import DINO_DEFAULT, QWEN_DEFAULT, CondEncoder
 from ..cond.prompts import template_index
-from ..models.towers import latent_stats, load_decoders, load_tower
+from ..models.decoders import latent_stats, load_decoders
+from ..models.flows import load_tower
 from ..utils.paths import REPO_ROOT, get_paths, resolve_hf_snapshot
 from .cascade import run_cascade, tex_on_shape
 from .export import Latents, decode, export_glb, export_shape_obj
@@ -40,8 +41,7 @@ class Pipeline:
     # ── construction ──
     @classmethod
     def separate(cls, ss: str, shape: str, tex: str, device: str = "cuda") -> "Pipeline":
-        ck = get_paths().trellis2_ckpt
-        towers = {k: load_tower(k, _abs(p), trellis2_ckpt=ck, device=device, layout="released")
+        towers = {k: load_tower(k, _abs(p), device=device, layout="released")
                   for k, p in (("ss", ss), ("shape", shape), ("tex", tex))}
         return cls("separate", towers=towers, device=device)
 
@@ -49,7 +49,7 @@ class Pipeline:
     def unified(cls, ckpt: str, mode: str = "refine", options=None, device: str = "cuda") -> "Pipeline":
         from ..models.unified.loading import load_unified
         from .unified import UnifiedOptions
-        bundle = load_unified(_abs(ckpt), trellis2_ckpt=get_paths().trellis2_ckpt, device=device)
+        bundle = load_unified(_abs(ckpt), device=device)
         pipe = cls("unified", device=device)
         pipe.sampler = (bundle, mode, options or UnifiedOptions())
         return pipe

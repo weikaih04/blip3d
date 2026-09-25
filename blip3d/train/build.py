@@ -6,7 +6,7 @@ import torch
 from ..cond.connector import Connector
 from ..cond.stamp import ViewCodes
 from ..models.blip3d import Blip3DTower, enable_elastic_gc
-from ..models.towers import released_flow, to_bf16_keep_complex
+from ..models.flows import build_flow, released_flow, to_bf16_keep_complex
 from .ckpt import tower_state
 from .config import TrainConfig
 
@@ -14,7 +14,9 @@ from .config import TrainConfig
 def build_tower(r: TrainConfig, trellis2_ckpt: str) -> Blip3DTower:
     """Stock TRELLIS.2 flow in the uniform-bf16 training layout + a fresh connector + view codes (+ ROAD on SS), then
     ``init`` weights if given. Buffers (codes, ROAD step) are never trainable."""
-    flow = to_bf16_keep_complex(released_flow(r.tower, trellis2_ckpt))
+    # stage 1 starts from the released TRELLIS.2 weights; later stages load their own weights (init or resume)
+    start_released = not r.init and not r.resume
+    flow = to_bf16_keep_complex(released_flow(r.tower, trellis2_ckpt) if start_released else build_flow(r.tower))
     road = None
     if r.road:
         from ..losses.road import RoadHead

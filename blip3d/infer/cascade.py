@@ -6,7 +6,8 @@ from typing import Dict, Optional
 import torch
 
 from ..cond.assemble import cond_uncond
-from ..models.towers import Decoders, LatentStats, Tower
+from ..models.decoders import Decoders, LatentStats
+from ..models.flows import Tower
 from .export import Latents
 from .presets import Preset
 from .stages import occ_to_coords, sample_shape, sample_ss_released, sample_tex

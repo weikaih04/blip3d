@@ -17,7 +17,7 @@ import torch.nn as nn
 from ..cond.connector import Connector
 from ..cond.stamp import ViewCodes
 from ..losses.unified import UnifiedLossCfg, UnifiedLossState, unified_loss
-from ..models.towers import released_flow, to_bf16_keep_complex
+from ..models.flows import build_flow, to_bf16_keep_complex
 from ..models.unified.model import Blip3DUnified
 from .ckpt import tower_state
 from .config import TrainConfig
@@ -46,7 +46,7 @@ class Blip3DUnifiedTrainable(nn.Module):
 
 def _tower(kind: str, r: TrainConfig, trellis2_ckpt: str):
     sd = tower_state(r.resolve(r.init[kind]), kind, use_ema=bool(r.init.get("use_ema", False)), require_ema=False)
-    flow = to_bf16_keep_complex(released_flow(kind, trellis2_ckpt))
+    flow = to_bf16_keep_complex(build_flow(kind))
     flow.load_state_dict({k[5:]: v for k, v in sd.items() if k.startswith("flow.")}, strict=True)
     conn = Connector()
     conn.load_state_dict({k[10:]: v for k, v in sd.items() if k.startswith("connector.")}, strict=True)
