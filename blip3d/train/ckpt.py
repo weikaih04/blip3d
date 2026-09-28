@@ -26,8 +26,11 @@ def load_state(ckpt_dir: str, use_ema: bool = True, require_ema: bool = True) ->
             missing = [k for k in ema if k not in sd]
             if missing:
                 raise KeyError(f"{ckpt_dir}: {len(missing)} EMA keys not in the model, e.g. {missing[:3]}")
+            # keep the EMA's own precision (fp32): layers kept in fp32 (the released layout's boundary layers, the
+            # connector at eval) get the exact average, bf16 layers round on load. v12's separate-tower benchmark
+            # overlaid this way; pre-overlaid ``*_ema`` dirs hold bf16-rounded values and cannot reproduce it.
             for k, v in ema.items():
-                sd[k] = v.to(sd[k].dtype)
+                sd[k] = v
         elif require_ema and not ckpt_dir.rstrip("/").endswith("_ema"):
             raise FileNotFoundError(f"{ckpt_dir}: no ema.safetensors (pass require_ema=False to use raw weights)")
     return sd
