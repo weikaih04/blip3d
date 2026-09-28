@@ -44,6 +44,21 @@ class ConfigStamp(TrainerCallback):
                 json.dump(self.blob, open(os.path.join(d, "blip3d_config.json"), "w"), indent=2)
 
 
+def training_args(r, out: str, workers: int) -> TrainingArguments:
+    """HF TrainingArguments of a config (DeepSpeed ZeRO-1 bf16 with fp32 accumulation, AdamW, WSD schedule)."""
+    ds_cfg = REPO_ROOT / "configs" / "deepspeed" / ("zero1_fp32acc_universal.json" if r.compute.universal
+                                                     else "zero1_fp32acc.json")
+    return TrainingArguments(
+        output_dir=out, run_name=r.name, max_steps=r.max_steps, seed=r.seed, bf16=True,
+        per_device_train_batch_size=r.compute.per_gpu_bs, gradient_accumulation_steps=r.compute.grad_accum,
+        learning_rate=r.lr, warmup_steps=r.warmup_steps, weight_decay=0.01, adam_beta1=0.9, adam_beta2=0.95,
+        adam_epsilon=1e-8, max_grad_norm=1.0, lr_scheduler_type="warmup_stable_decay",
+        lr_scheduler_kwargs={"num_decay_steps": r.decay_steps, "decay_type": "cosine", "min_lr_ratio": 0.0},
+        logging_steps=5, save_steps=r.compute.save_steps, save_total_limit=r.compute.keep, report_to=r.report_to,
+        deepspeed=str(ds_cfg), dataloader_num_workers=workers, ignore_data_skip=True,
+        remove_unused_columns=False, accelerator_config={"dispatch_batches": False})
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("config")
@@ -90,17 +105,7 @@ def main():
     if a.dry_run:
         return
 
-    ds_cfg = REPO_ROOT / "configs" / "deepspeed" / ("zero1_fp32acc_universal.json" if r.compute.universal
-                                                     else "zero1_fp32acc.json")
-    args = TrainingArguments(
-        output_dir=out, run_name=r.name, max_steps=r.max_steps, seed=r.seed, bf16=True,
-        per_device_train_batch_size=r.compute.per_gpu_bs, gradient_accumulation_steps=r.compute.grad_accum,
-        learning_rate=r.lr, warmup_steps=r.warmup_steps, weight_decay=0.01, adam_beta1=0.9, adam_beta2=0.95,
-        adam_epsilon=1e-8, max_grad_norm=1.0, lr_scheduler_type="warmup_stable_decay",
-        lr_scheduler_kwargs={"num_decay_steps": r.decay_steps, "decay_type": "cosine", "min_lr_ratio": 0.0},
-        logging_steps=5, save_steps=r.compute.save_steps, save_total_limit=r.compute.keep, report_to=r.report_to,
-        deepspeed=str(ds_cfg), dataloader_num_workers=mix.num_workers, ignore_data_skip=True,
-        remove_unused_columns=False, accelerator_config={"dispatch_batches": False})
+    args = training_args(r, out, mix.num_workers)
 
     clip = AdaptiveGradClipCallback(resume_from=resume)
     ema = EMACallback(decay=float(r.ema.get("decay", 0.9999)), warmup=bool(r.ema.get("warmup", True)),
