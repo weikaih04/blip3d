@@ -117,3 +117,19 @@ def load_ema_file(ckpt_dir: str, kind: Optional[str] = None) -> Dict[str, torch.
     from safetensors.torch import load_file
     ema = load_file(os.path.join(ckpt_dir, "ema.safetensors"))
     return from_v12(ema, kind) if (kind is not None and is_v12(ema)) else ema
+
+
+def restore_buffers(module: torch.nn.Module, ckpt_dir: str) -> Dict[str, torch.Tensor]:
+    """Copy the persistent buffers (ROAD step counter, fixed codes, RoPE tables) of a checkpoint into ``module``.
+    DeepSpeed restores only parameters when it resumes from a UNIVERSAL checkpoint (engine._load_checkpoint skips the
+    module state dict), so without this the ROAD micro-step counter restarts at 0 after every world-size change."""
+    from safetensors.torch import load_file
+    sd = load_file(os.path.join(ckpt_dir, "model.safetensors"))
+    persistent = set(module.state_dict().keys())
+    restored = {}
+    with torch.no_grad():
+        for name, buf in module.named_buffers():
+            if name in persistent and name in sd:
+                buf.copy_(sd[name].to(buf.dtype))
+                restored[name] = buf
+    return restored

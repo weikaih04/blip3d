@@ -93,6 +93,12 @@ def main():
         model = build_tower(r, paths.trellis2_ckpt)
         key_map = (lambda sd: from_v12(sd, r.tower) if is_v12(sd) else sd)
 
+    if resume:   # DeepSpeed's universal load skips buffers; the plain load overwrites them with the same values
+        from blip3d.train.ckpt import restore_buffers
+        rb = restore_buffers(model, resume)
+        if rank == 0 and "road.step" in rb:
+            print(f"[blip3d] restored {len(rb)} buffers from {resume} (road.step = {int(rb['road.step'])})", flush=True)
+
     from blip3d.data import build_mixture
     mix = build_mixture(r.data_path(), per_gpu_bs=r.compute.per_gpu_bs, seed=r.seed, resume_step=resume_step,
                         compat_replay=r.compat.data_replay, align_points=r.road, qwen_path=qwen)
