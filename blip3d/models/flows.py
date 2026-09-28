@@ -42,8 +42,10 @@ def build_flow(kind: str) -> nn.Module:
     return getattr(models, cfg["name"])(**cfg["args"])
 
 
-def _strict_load(flow: nn.Module, sd: Dict[str, torch.Tensor], what: str) -> None:
+def _strict_load(flow: nn.Module, sd: Dict[str, torch.Tensor], what: str, derived=()) -> None:
+    """Every key must match, except ``derived`` buffers the constructor computes (not stored in the released files)."""
     missing, unexpected = flow.load_state_dict(sd, strict=False)
+    missing = [k for k in missing if k not in derived]
     if missing or unexpected:
         raise KeyError(f"{what}: missing {missing[:5]} ({len(missing)}), unexpected {unexpected[:5]} ({len(unexpected)})")
 
@@ -53,7 +55,7 @@ def released_flow(kind: str, trellis2_ckpt: str) -> nn.Module:
     from safetensors.torch import load_file
     flow = build_flow(kind)
     _strict_load(flow, load_file(os.path.join(trellis2_ckpt, "ckpts", RELEASED[kind] + ".safetensors")),
-                 f"TRELLIS.2-4B {RELEASED[kind]}")
+                 f"TRELLIS.2-4B {RELEASED[kind]}", derived=("rope_phases",))   # SS flow: RoPE table built in __init__
     return flow
 
 
