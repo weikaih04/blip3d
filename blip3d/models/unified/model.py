@@ -324,8 +324,7 @@ class Blip3DUnified(nn.Module):
         CHECKPOINTED HERE, not via blk.use_checkpoint. This lane reaches into
         blk.norm1 / blk.self_attn / blk.cross_attn / blk.mlp and never calls
         blk.forward(), so the per-block use_checkpoint flag the builder sets is
-        DEAD on this tower — exactly the trap the from_scratch branch of
-        trellis_native_vlm.py documents for MMDiT3D, reproduced one tower over.
+        DEAD on this tower.
         The flag was set, the log printed "ss 30/30", and none of the 30 blocks
         was actually checkpointed: the SS tower is dense (4096 tokens x 1536 ch
         x 30 blocks, plus a 4x MLP hidden), so keeping every intermediate live

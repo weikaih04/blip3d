@@ -1,6 +1,6 @@
 """ROAD alignment on the SS tower (v12 S2 SS and the SS continuation).
 
-What v12 did, per training micro-step (trellis_native_vlm.py _road_kit + flow_heads.py:320-384, 488-493):
+Per training micro-step:
   1. a forward hook on ``ss_flow.blocks[9]`` (1-indexed depth num_blocks // 3 = 10 of 30) stashes that block's output
      (B, 4096, 1536) during the SS flow forward;
   2. the frozen Uni3D-g teacher encodes the row's GT point cloud (``align_points``, 10k voxel centres) under bf16

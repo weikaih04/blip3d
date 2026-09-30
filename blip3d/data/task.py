@@ -44,7 +44,7 @@ TEX_MISSING = ("placeholder", "resample", "batch_drop")
 
 DEFAULT_TIER_WEIGHTS = (0.35, 0.20, 0.10, 0.35)   # [long, medium, short, long+texture]
 
-# multi-image view weights over the 16 renders (live_cond_batch.py:64-67)
+# multi-image view weights over the 16 renders
 IM_VIEW_WEIGHTS = tuple([0.15] * 3 +   # 000-002 below ground
                         [0.6] * 2 +    # 003-004
                         [1.0] * 7 +    # 005-011 eye level .. three-quarter
